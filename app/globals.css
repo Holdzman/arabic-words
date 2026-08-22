@@ -1,49 +1,240 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --accent: #0f172a;
+  --accent-foreground: #ffffff;
+  --danger: #dc2626;
+  --success: #16a34a;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--foreground);
+  background: var(--background);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+input,
+select {
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 100%;
+}
+
+label {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.app-header {
+  padding: 20px 16px 8px;
+}
+
+.app-header h1 {
+  font-size: 1.25rem;
+}
+
+.app-main {
+  flex: 1;
+  padding: 8px 16px 16px;
+  overflow-y: auto;
+}
+
+.app-main section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tab-bar {
+  display: flex;
+  border-top: 1px solid var(--border);
+}
+
+.tab-button {
+  flex: 1;
+  background: none;
+  color: var(--muted);
+  border-radius: 0;
+  padding: 14px 8px;
+}
+
+.tab-button-active {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.add-word-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.word-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.word-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.word-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.word-arabic {
+  font-size: 1.1rem;
+}
+
+.word-translation {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.word-row-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.pill {
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  background: var(--border);
+  color: var(--foreground);
+}
+
+.pill-active {
+  background: var(--success);
+  color: white;
+}
+
+.pill-danger {
+  background: transparent;
+  color: var(--danger);
+}
+
+.empty-state {
+  color: var(--muted);
+  padding: 24px 0;
+  text-align: center;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.help-text {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.status {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.status-ok {
+  color: var(--success);
+}
+
+.error-box {
+  padding: 12px;
+  border: 1px solid var(--danger);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.error-box p {
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+.result-card {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.result-arabic {
+  font-size: 1.25rem;
+}
+
+.result-translation {
+  color: var(--muted);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
-  }
-}
-
-html {
-  height: 100%;
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+    --border: #27272a;
+    --accent: #e5e7eb;
+    --accent-foreground: #0a0a0a;
   }
 }

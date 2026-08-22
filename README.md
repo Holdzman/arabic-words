@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Арабские слова — веб-версия
 
-## Getting Started
+Личный тренажёр арабской лексики: добавляете слова, отмечаете выученные, а на вкладке «Практика» ИИ (Claude) генерирует пример-предложение с новым словом, используя уже выученные слова.
 
-First, run the development server:
+Уже собрано и проверено здесь (сборка `npm run build` проходит, основные сценарии протестированы в браузере): пустой список → добавление/отметка/удаление слов с сохранением в localStorage, настройки с сохранением ключа, и полный проход через прокси-сервер до реального Anthropic API (с фейковым ключом — тот корректно вернул 401, что подтвердило всю цепочку). Реальную генерацию предложения с настоящим ключом нужно проверить вам самим — платного ключа для теста здесь не было.
+
+## Запуск локально
 
 ```bash
+cd arabic-words
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Откройте http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Как это работает
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Список слов и API-ключ хранятся только в вашем браузере (localStorage) — если очистите данные сайта в Safari, они пропадут.
+- Ключ Anthropic вводится в Настройках, но сам запрос к api.anthropic.com делает не браузер, а маленький серверный обработчик (`app/api/generate-sentence/route.ts`) — так безопаснее и обходит ограничение браузеров на прямые запросы к Anthropic.
+- Ключ нигде не сохраняется на сервере — он просто передаётся с каждым запросом и используется один раз.
 
-## Learn More
+**Компромисс по безопасности:** хранить ключ в localStorage браузера менее безопасно, чем в Keychain нативного приложения — теоретически его может прочитать вредоносный скрипт или расширение браузера. Для личного использования это приемлемо, но стоит знать.
 
-To learn more about Next.js, take a look at the following resources:
+## Деплой на Vercel (чтобы открывать с iPhone из любого места)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Создайте пустой репозиторий на GitHub, затем из папки `arabic-words`:
+   ```bash
+   git add -A
+   git commit -m "Initial commit"
+   git remote add origin <URL вашего репозитория>
+   git push -u origin main
+   ```
+2. На vercel.com: **Add New → Project → Import** ваш репозиторий. Vercel сам определит, что это Next.js. **Никаких переменных окружения настраивать не нужно** — ключ передаётся из браузера с каждым запросом, на сервере ничего не хранится.
+3. Нажмите Deploy. Через минуту получите ссылку вида `https://arabic-words-xxxx.vercel.app`.
+4. Каждый следующий `git push` автоматически передеплоит сайт.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Установка на iPhone как приложение (PWA)
 
-## Deploy on Vercel
+1. Откройте ссылку `.vercel.app` в Safari на iPhone.
+2. Нажмите кнопку "Поделиться" → **На экран «Домой»**.
+3. Появится иконка — приложение будет открываться в полноэкранном режиме, как обычное приложение.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Получить API-ключ
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. console.anthropic.com → регистрация → привязать способ оплаты (оплата по факту использования).
+2. API Keys → Create Key → скопировать (`sk-ant-...`).
+3. В приложении: Настройки → вставить ключ → Сохранить.
+
+## Дальше (сознательно не реализовано)
+
+- Итальянский/английский — поле `language` можно добавить в `Word` по образцу того, что уже есть в `lib/types.ts`.
+- Режим "переведи на арабский".
+- Режим "найти реальные статьи с похожими словами".
