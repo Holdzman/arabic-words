@@ -59,8 +59,6 @@ export async function POST(request: Request) {
           properties: {
             candidates: {
               type: "array",
-              minItems: 1,
-              maxItems: 4,
               items: {
                 type: "object",
                 properties: {
@@ -144,11 +142,13 @@ export async function POST(request: Request) {
       }
     }
     return Response.json({
-      candidates: parsed.candidates.map((c: { arabic: string; translation: string; part_of_speech: string }) => ({
-        arabic: c.arabic,
-        translation: c.translation,
-        partOfSpeech: c.part_of_speech,
-      })),
+      candidates: parsed.candidates
+        .slice(0, 4)
+        .map((c: { arabic: string; translation: string; part_of_speech: string }) => ({
+          arabic: c.arabic,
+          translation: c.translation,
+          partOfSpeech: c.part_of_speech,
+        })),
     });
   } catch {
     return errorResponse(502, "malformed_response");
