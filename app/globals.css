@@ -110,6 +110,36 @@ label {
   gap: 8px;
 }
 
+.add-word-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.candidate-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.candidate-option {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  background: none;
+  color: var(--foreground);
+  padding: 0;
+  text-align: left;
+}
+
+.candidate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .word-list {
   list-style: none;
   display: flex;

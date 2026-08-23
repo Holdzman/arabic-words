@@ -3,7 +3,7 @@ import type { GenerationErrorCode } from "./types";
 export function errorMessage(code: GenerationErrorCode, upstreamMessage?: string): string {
   switch (code) {
     case "missing_api_key":
-      return "Добавьте свой Anthropic API-ключ в настройках, чтобы генерировать предложения.";
+      return "Добавьте свой Anthropic API-ключ в настройках, чтобы пользоваться функциями ИИ.";
     case "invalid_api_key":
       return "Похоже, API-ключ неверный. Проверьте его в настройках.";
     case "forbidden":
@@ -17,7 +17,7 @@ export function errorMessage(code: GenerationErrorCode, upstreamMessage?: string
     case "network_error":
       return "Проблема с сетью. Проверьте подключение к интернету.";
     case "refusal":
-      return "ИИ отказался сгенерировать это предложение.";
+      return "ИИ отказался выполнить этот запрос.";
     case "truncated":
       return "Ответ оказался обрезан. Попробуйте ещё раз.";
     case "malformed_response":

@@ -36,3 +36,19 @@ export interface GenerateSentenceRequestBody {
   targetWord: { text: string; translation: string };
   knownWords: { text: string; translation: string }[];
 }
+
+export interface DisambiguationCandidate {
+  arabic: string;
+  translation: string;
+  partOfSpeech: string;
+}
+
+export interface DisambiguateWordRequestBody {
+  apiKey: string;
+  text: string;
+  translationHint?: string;
+}
+
+export interface DisambiguateWordResponse {
+  candidates: DisambiguationCandidate[];
+}
