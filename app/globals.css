@@ -116,6 +116,12 @@ label {
   gap: 8px;
 }
 
+.mode-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
 .candidate-picker {
   display: flex;
   flex-direction: column;

@@ -52,3 +52,13 @@ export interface DisambiguateWordRequestBody {
 export interface DisambiguateWordResponse {
   candidates: DisambiguationCandidate[];
 }
+
+export interface TranslationQuizResponse {
+  russianSentence: string;
+  arabicSentence: string;
+}
+
+export interface GenerateTranslationQuizRequestBody {
+  apiKey: string;
+  words: { text: string; translation: string }[];
+}

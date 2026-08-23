@@ -5,8 +5,11 @@ import type {
   DisambiguateWordResponse,
   GeneratedSentence,
   GenerationErrorResponse,
+  TranslationQuizResponse,
   Word,
 } from "./types";
+
+const TRANSLATION_QUIZ_WORD_CAP = 30;
 
 export class GenerationError extends Error {
   constructor(public code: GenerationErrorResponse["error"]["code"], message: string) {
@@ -73,4 +76,32 @@ export async function disambiguateWord(
   }
 
   return (data as DisambiguateWordResponse).candidates;
+}
+
+export async function generateTranslationQuiz(words: Word[]): Promise<TranslationQuizResponse> {
+  const apiKey = getApiKey();
+  if (!apiKey || !apiKey.trim()) {
+    throw new GenerationError("missing_api_key", errorMessage("missing_api_key"));
+  }
+
+  const response = await fetch("/api/generate-translation-quiz", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      apiKey,
+      words: words
+        .slice(0, TRANSLATION_QUIZ_WORD_CAP)
+        .map((w) => ({ text: w.text, translation: w.translation })),
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    const errorData = data as GenerationErrorResponse;
+    const code = errorData.error?.code ?? "unknown";
+    throw new GenerationError(code, errorMessage(code, errorData.error?.message));
+  }
+
+  return data as TranslationQuizResponse;
 }
