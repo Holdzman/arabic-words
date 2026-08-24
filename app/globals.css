@@ -141,6 +141,19 @@ label {
   gap: 12px;
 }
 
+.bulk-review-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.bulk-review-row input[type="checkbox"] {
+  width: auto;
+  flex-shrink: 0;
+}
+
 .candidate-option {
   width: 100%;
   display: flex;

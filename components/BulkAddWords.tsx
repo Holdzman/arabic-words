@@ -1,19 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { disambiguateWord, GenerationError } from "@/lib/anthropicClient";
 import type { DisambiguationCandidate } from "@/lib/types";
 
-type Status = "idle" | "loading" | "picking" | "error" | "done";
+type Status = "idle" | "processing" | "reviewing" | "error" | "done";
 
 interface QueueItem {
   text: string;
   hint: string;
 }
 
+interface ReviewRow {
+  candidate: DisambiguationCandidate;
+  checked: boolean;
+}
+
 function parseQueue(raw: string): QueueItem[] {
   return raw
-    .split("\n")
+    .split(/[\n,]/)
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
     .map((line) => {
@@ -26,45 +31,48 @@ function parseQueue(raw: string): QueueItem[] {
 export function BulkAddWords({ onAdd }: { onAdd: (text: string, translation: string) => void }) {
   const [raw, setRaw] = useState("");
   const [queue, setQueue] = useState<QueueItem[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [addedCount, setAddedCount] = useState(0);
+  const [processedIndex, setProcessedIndex] = useState(0);
+  const [rows, setRows] = useState<ReviewRow[]>([]);
   const [status, setStatus] = useState<Status>("idle");
-  const [candidates, setCandidates] = useState<DisambiguationCandidate[]>([]);
   const [errorText, setErrorText] = useState<string | null>(null);
-
-  const current = queue[currentIndex];
+  const [addedCount, setAddedCount] = useState(0);
+  const cancelledRef = useRef(false);
 
   function resetAll() {
     setRaw("");
     setQueue([]);
-    setCurrentIndex(0);
-    setAddedCount(0);
+    setProcessedIndex(0);
+    setRows([]);
     setStatus("idle");
-    setCandidates([]);
     setErrorText(null);
+    setAddedCount(0);
   }
 
-  async function processCurrent(item: QueueItem) {
-    setStatus("loading");
+  async function runProcessing(items: QueueItem[], startIndex: number, collected: ReviewRow[]) {
+    cancelledRef.current = false;
+    setStatus("processing");
     setErrorText(null);
-    try {
-      const result = await disambiguateWord(item.text, item.hint);
-      setCandidates(result);
-      setStatus("picking");
-    } catch (err) {
-      setErrorText(err instanceof GenerationError ? err.message : "Что-то пошло не так. Попробуйте ещё раз.");
-      setStatus("error");
-    }
-  }
 
-  function advance() {
-    const next = currentIndex + 1;
-    if (next >= queue.length) {
-      setStatus("done");
-      return;
+    for (let i = startIndex; i < items.length; i++) {
+      setProcessedIndex(i);
+      if (cancelledRef.current) return;
+
+      try {
+        const candidates = await disambiguateWord(items[i].text, items[i].hint);
+        if (cancelledRef.current) return;
+        collected.push({ candidate: candidates[0], checked: true });
+      } catch (err) {
+        if (cancelledRef.current) return;
+        setProcessedIndex(i);
+        setRows(collected);
+        setErrorText(err instanceof GenerationError ? err.message : "Что-то пошло не так. Попробуйте ещё раз.");
+        setStatus("error");
+        return;
+      }
     }
-    setCurrentIndex(next);
-    void processCurrent(queue[next]);
+
+    setRows(collected);
+    setStatus("reviewing");
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -72,31 +80,35 @@ export function BulkAddWords({ onAdd }: { onAdd: (text: string, translation: str
     const parsed = parseQueue(raw);
     if (parsed.length === 0) return;
     setQueue(parsed);
-    setCurrentIndex(0);
-    setAddedCount(0);
-    void processCurrent(parsed[0]);
+    void runProcessing(parsed, 0, []);
   }
 
-  function pickCandidate(candidate: DisambiguationCandidate) {
-    onAdd(candidate.arabic, candidate.translation);
-    setAddedCount((n) => n + 1);
-    advance();
+  function retryFromError() {
+    void runProcessing(queue, processedIndex, rows.slice());
   }
 
-  function addAsIs() {
-    if (!current) return;
-    onAdd(current.text, current.hint);
-    setAddedCount((n) => n + 1);
-    advance();
+  function cancelProcessing() {
+    cancelledRef.current = true;
+    resetAll();
   }
 
-  function skip() {
-    advance();
+  function toggleRow(index: number) {
+    setRows((prev) => prev.map((r, i) => (i === index ? { ...r, checked: !r.checked } : r)));
   }
 
-  function abort() {
+  function addSelected() {
+    let count = 0;
+    for (const row of rows) {
+      if (row.checked) {
+        onAdd(row.candidate.arabic, row.candidate.translation);
+        count++;
+      }
+    }
+    setAddedCount(count);
     setStatus("done");
   }
+
+  const checkedCount = rows.filter((r) => r.checked).length;
 
   return (
     <div className="add-word-form">
@@ -104,7 +116,7 @@ export function BulkAddWords({ onAdd }: { onAdd: (text: string, translation: str
         <form onSubmit={handleSubmit}>
           <textarea
             className="bulk-textarea"
-            placeholder={"Одно слово на строку, например:\nخبز - печь\nباذنجان"}
+            placeholder={"Слова через запятую или по одной на строку:\nخبز - печь, باذنجان, طباخ"}
             value={raw}
             onChange={(e) => setRaw(e.target.value)}
             rows={6}
@@ -115,72 +127,67 @@ export function BulkAddWords({ onAdd }: { onAdd: (text: string, translation: str
         </form>
       )}
 
-      {(status === "loading" || status === "picking" || status === "error") && current && (
+      {status === "processing" && (
         <div className="candidate-picker">
           <div className="bulk-progress">
             <span className="help-text">
-              Слово {currentIndex + 1} из {queue.length}:{" "}
-              <span dir="auto">{current.text}</span>
+              Обрабатываю {Math.min(processedIndex + 1, queue.length)} из {queue.length}…
             </span>
-            <button type="button" className="pill-danger" onClick={abort}>
-              Прервать
+            <button type="button" className="pill-danger" onClick={cancelProcessing}>
+              Отмена
             </button>
           </div>
+        </div>
+      )}
 
-          {status === "loading" && <p className="help-text">Уточняю варианты…</p>}
+      {status === "error" && (
+        <div className="error-box">
+          <p>{errorText}</p>
+          <div className="candidate-actions">
+            <button type="button" onClick={retryFromError}>
+              Повторить
+            </button>
+            <button type="button" onClick={resetAll}>
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
 
-          {status === "error" && (
-            <div className="error-box">
-              <p>{errorText}</p>
-              <div className="candidate-actions">
-                <button type="button" onClick={() => processCurrent(current)}>
-                  Повторить
-                </button>
-                <button type="button" onClick={addAsIs}>
-                  Добавить как есть
-                </button>
-                <button type="button" onClick={skip}>
-                  Пропустить
-                </button>
-              </div>
-            </div>
-          )}
-
-          {status === "picking" && (
-            <>
-              <p className="help-text">Какое слово вы имели в виду?</p>
-              <ul className="word-list">
-                {candidates.map((candidate, i) => (
-                  <li key={i} className="word-row">
-                    <button type="button" className="candidate-option" onClick={() => pickCandidate(candidate)}>
-                      <span dir="rtl" className="word-arabic">
-                        {candidate.arabic}
-                      </span>
-                      <span className="word-translation">
-                        {candidate.translation} ({candidate.partOfSpeech})
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <div className="candidate-actions">
-                <button type="button" onClick={addAsIs}>
-                  Добавить как есть: {current.text}
-                </button>
-                <button type="button" onClick={skip}>
-                  Пропустить
-                </button>
-              </div>
-            </>
-          )}
+      {status === "reviewing" && (
+        <div className="candidate-picker">
+          <p className="help-text">Проверьте варианты и снимите галочку с ненужных слов.</p>
+          <ul className="word-list">
+            {rows.map((row, i) => (
+              <li key={i} className="word-row">
+                <label className="bulk-review-row">
+                  <input type="checkbox" checked={row.checked} onChange={() => toggleRow(i)} />
+                  <span className="word-row-text">
+                    <span dir="rtl" className="word-arabic">
+                      {row.candidate.arabic}
+                    </span>
+                    <span className="word-translation">
+                      {row.candidate.translation} ({row.candidate.partOfSpeech})
+                    </span>
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
+          <div className="candidate-actions">
+            <button type="button" onClick={addSelected} disabled={checkedCount === 0}>
+              Добавить выбранные ({checkedCount})
+            </button>
+            <button type="button" onClick={resetAll}>
+              Отмена
+            </button>
+          </div>
         </div>
       )}
 
       {status === "done" && (
         <div className="result-card">
-          <p>
-            Добавлено {addedCount} из {queue.length} слов.
-          </p>
+          <p>Добавлено {addedCount} слов.</p>
           <button type="button" onClick={resetAll}>
             Готово
           </button>
