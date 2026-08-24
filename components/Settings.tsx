@@ -3,13 +3,17 @@
 import { useState } from "react";
 
 export function Settings({
+  username,
   hasApiKey,
-  onSave,
-  onDelete,
+  onSaveKey,
+  onDeleteKey,
+  onLogout,
 }: {
+  username: string;
   hasApiKey: boolean;
-  onSave: (key: string) => void;
-  onDelete: () => void;
+  onSaveKey: (key: string) => void;
+  onDeleteKey: () => void;
+  onLogout: () => void;
 }) {
   const [input, setInput] = useState("");
 
@@ -17,12 +21,19 @@ export function Settings({
     e.preventDefault();
     const trimmed = input.trim();
     if (!trimmed) return;
-    onSave(trimmed);
+    onSaveKey(trimmed);
     setInput("");
   }
 
   return (
     <section>
+      <div className="settings-account">
+        <p className="status status-ok">Вы вошли как {username}</p>
+        <button type="button" className="pill-danger" onClick={onLogout}>
+          Выйти
+        </button>
+      </div>
+
       <form className="settings-form" onSubmit={handleSave}>
         <label htmlFor="api-key">Anthropic API-ключ</label>
         <input
@@ -34,16 +45,15 @@ export function Settings({
           onChange={(e) => setInput(e.target.value)}
         />
         <p className="help-text">
-          Получите ключ на console.anthropic.com. Он хранится только в этом браузере (localStorage) и
-          отправляется исключительно на api.anthropic.com через наш сервер-прокси — на других устройствах его
-          придётся ввести заново.
+          Получите ключ на console.anthropic.com. Он хранится в зашифрованном виде на сервере и синхронизируется
+          на все ваши устройства после входа.
         </p>
         <div className="settings-actions">
           <button type="submit" disabled={!input.trim()}>
             Сохранить
           </button>
           {hasApiKey && (
-            <button type="button" className="pill-danger" onClick={onDelete}>
+            <button type="button" className="pill-danger" onClick={onDeleteKey}>
               Удалить ключ
             </button>
           )}

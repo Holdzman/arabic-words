@@ -1,4 +1,5 @@
-import { getApiKey } from "./storage";
+import { postJson, ApiError, AuthRequiredError } from "./api";
+import { hasApiKeyCached } from "./account";
 import { errorMessage } from "./errorMessages";
 import type {
   DisambiguationCandidate,
@@ -18,90 +19,54 @@ export class GenerationError extends Error {
   }
 }
 
-export async function generateSentence(
-  targetWord: Word,
-  knownWords: Word[]
-): Promise<GeneratedSentence> {
-  const apiKey = getApiKey();
-  if (!apiKey || !apiKey.trim()) {
-    throw new GenerationError("missing_api_key", errorMessage("missing_api_key"));
-  }
-
-  const response = await fetch("/api/generate-sentence", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      apiKey,
-      targetWord: { text: targetWord.text, translation: targetWord.translation },
-      knownWords: knownWords.map((w) => ({ text: w.text, translation: w.translation })),
-    }),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    const errorData = data as GenerationErrorResponse;
-    const code = errorData.error?.code ?? "unknown";
-    throw new GenerationError(code, errorMessage(code, errorData.error?.message));
-  }
-
-  return data as GeneratedSentence;
+function raiseGenerationError(err: unknown): never {
+  if (err instanceof AuthRequiredError) throw err;
+  const data = err instanceof ApiError ? (err.data as GenerationErrorResponse) : null;
+  const code = data?.error?.code ?? "unknown";
+  throw new GenerationError(code, errorMessage(code, data?.error?.message));
 }
 
-export async function disambiguateWord(
-  text: string,
-  translationHint: string
-): Promise<DisambiguationCandidate[]> {
-  const apiKey = getApiKey();
-  if (!apiKey || !apiKey.trim()) {
+export async function generateSentence(targetWord: Word, knownWords: Word[]): Promise<GeneratedSentence> {
+  if (!hasApiKeyCached()) {
     throw new GenerationError("missing_api_key", errorMessage("missing_api_key"));
   }
 
-  const response = await fetch("/api/disambiguate-word", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      apiKey,
-      text,
-      translationHint: translationHint || undefined,
-    }),
-  });
+  try {
+    return await postJson<GeneratedSentence>("/api/generate-sentence", {
+      targetWord: { text: targetWord.text, translation: targetWord.translation },
+      knownWords: knownWords.map((w) => ({ text: w.text, translation: w.translation })),
+    });
+  } catch (err) {
+    raiseGenerationError(err);
+  }
+}
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    const errorData = data as GenerationErrorResponse;
-    const code = errorData.error?.code ?? "unknown";
-    throw new GenerationError(code, errorMessage(code, errorData.error?.message));
+export async function disambiguateWord(text: string, translationHint: string): Promise<DisambiguationCandidate[]> {
+  if (!hasApiKeyCached()) {
+    throw new GenerationError("missing_api_key", errorMessage("missing_api_key"));
   }
 
-  return (data as DisambiguateWordResponse).candidates;
+  try {
+    const res = await postJson<DisambiguateWordResponse>("/api/disambiguate-word", {
+      text,
+      translationHint: translationHint || undefined,
+    });
+    return res.candidates;
+  } catch (err) {
+    raiseGenerationError(err);
+  }
 }
 
 export async function generateTranslationQuiz(words: Word[]): Promise<TranslationQuizResponse> {
-  const apiKey = getApiKey();
-  if (!apiKey || !apiKey.trim()) {
+  if (!hasApiKeyCached()) {
     throw new GenerationError("missing_api_key", errorMessage("missing_api_key"));
   }
 
-  const response = await fetch("/api/generate-translation-quiz", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      apiKey,
-      words: words
-        .slice(0, TRANSLATION_QUIZ_WORD_CAP)
-        .map((w) => ({ text: w.text, translation: w.translation })),
-    }),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    const errorData = data as GenerationErrorResponse;
-    const code = errorData.error?.code ?? "unknown";
-    throw new GenerationError(code, errorMessage(code, errorData.error?.message));
+  try {
+    return await postJson<TranslationQuizResponse>("/api/generate-translation-quiz", {
+      words: words.slice(0, TRANSLATION_QUIZ_WORD_CAP).map((w) => ({ text: w.text, translation: w.translation })),
+    });
+  } catch (err) {
+    raiseGenerationError(err);
   }
-
-  return data as TranslationQuizResponse;
 }

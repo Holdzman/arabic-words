@@ -1,4 +1,6 @@
 import type { GenerateSentenceRequestBody, GenerationErrorResponse } from "@/lib/types";
+import { authErrorResponse } from "@/lib/server/authErrorResponse";
+import { resolveSessionApiKey } from "@/lib/server/resolveApiKey";
 
 const ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
@@ -26,10 +28,14 @@ export async function POST(request: Request) {
     return errorResponse(400, "bad_request", "invalid JSON body");
   }
 
-  const apiKey = body.apiKey?.trim();
-  if (!apiKey) {
+  const resolved = await resolveSessionApiKey();
+  if (!resolved) {
+    return authErrorResponse(401, "not_authenticated");
+  }
+  if (!resolved.apiKey) {
     return errorResponse(400, "missing_api_key");
   }
+  const apiKey = resolved.apiKey;
 
   const knownWordsList = body.knownWords
     .map((w) => `${w.text} (${w.translation})`)

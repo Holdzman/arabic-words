@@ -2,48 +2,111 @@
 
 import { useEffect, useState } from "react";
 import type { Word } from "@/lib/types";
-import * as storage from "@/lib/storage";
+import * as account from "@/lib/account";
+import * as wordsApi from "@/lib/wordsApi";
 import { TabBar, type AppTab } from "./TabBar";
 import { WordList } from "./WordList";
 import { Practice } from "./Practice";
 import { Settings } from "./Settings";
+import { AuthGate } from "./AuthGate";
+
+type AuthStatus = "loading" | "anon" | "authed";
 
 export function AppShell() {
+  const [authStatus, setAuthStatus] = useState<AuthStatus>("loading");
+  const [username, setUsername] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<AppTab>("words");
   const [words, setWords] = useState<Word[]>([]);
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(false);
 
   useEffect(() => {
-    setWords(storage.getWords());
-    setApiKey(storage.getApiKey());
-    setIsLoaded(true);
+    let cancelled = false;
+    (async () => {
+      const session = await account.getSession();
+      if (cancelled) return;
+      if (!session.authenticated) {
+        setAuthStatus("anon");
+        return;
+      }
+      const [w, key] = await Promise.all([wordsApi.getWords(), account.getApiKeyStatus()]);
+      if (cancelled) return;
+      setUsername(session.username ?? null);
+      setWords(w);
+      setHasApiKey(key.hasApiKey);
+      setAuthStatus("authed");
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
+  useEffect(() => {
+    function onExpired() {
+      setAuthStatus("anon");
+      setUsername(null);
+      setWords([]);
+      setHasApiKey(false);
+    }
+    window.addEventListener("arabicwords:auth-expired", onExpired);
+    return () => window.removeEventListener("arabicwords:auth-expired", onExpired);
+  }, []);
+
+  async function handleAuthenticated(newUsername: string, importedWords: Word[] | null) {
+    setUsername(newUsername);
+    setWords(importedWords ?? (await wordsApi.getWords()));
+    setHasApiKey((await account.getApiKeyStatus()).hasApiKey);
+    setAuthStatus("authed");
+  }
+
+  async function handleLogout() {
+    await account.logout();
+    setAuthStatus("anon");
+    setUsername(null);
+    setWords([]);
+    setHasApiKey(false);
+  }
+
+  async function persist(next: Word[]) {
+    const prev = words;
+    setWords(next);
+    try {
+      await wordsApi.saveWords(next);
+    } catch {
+      setWords(prev);
+    }
+  }
+
   function handleAdd(text: string, translation: string) {
-    setWords(storage.addWord(text, translation));
+    persist([
+      { id: crypto.randomUUID(), text, translation, isLearned: false, dateAdded: new Date().toISOString() },
+      ...words,
+    ]);
   }
 
   function handleToggleLearned(id: string) {
-    setWords(storage.toggleLearned(id));
+    persist(words.map((w) => (w.id === id ? { ...w, isLearned: !w.isLearned } : w)));
   }
 
   function handleDelete(id: string) {
-    setWords(storage.deleteWord(id));
+    persist(words.filter((w) => w.id !== id));
   }
 
-  function handleSaveKey(key: string) {
-    storage.saveApiKey(key);
-    setApiKey(key);
+  async function handleSaveKey(key: string) {
+    await account.saveApiKey(key);
+    setHasApiKey(true);
   }
 
-  function handleDeleteKey() {
-    storage.deleteApiKey();
-    setApiKey(null);
+  async function handleDeleteKey() {
+    await account.deleteApiKey();
+    setHasApiKey(false);
   }
 
-  if (!isLoaded) {
+  if (authStatus === "loading") {
     return null;
+  }
+
+  if (authStatus === "anon") {
+    return <AuthGate onAuthenticated={handleAuthenticated} />;
   }
 
   return (
@@ -69,7 +132,13 @@ export function AppShell() {
           />
         )}
         {activeTab === "settings" && (
-          <Settings hasApiKey={!!apiKey} onSave={handleSaveKey} onDelete={handleDeleteKey} />
+          <Settings
+            username={username ?? ""}
+            hasApiKey={hasApiKey}
+            onSaveKey={handleSaveKey}
+            onDeleteKey={handleDeleteKey}
+            onLogout={handleLogout}
+          />
         )}
       </main>
 
