@@ -20,6 +20,7 @@ export async function POST(request: Request) {
     )
   `;
   await sql`create unique index if not exists users_username_lower_idx on users (lower(username))`;
+  await sql`delete from users where lower(username) = 'smoketest'`;
 
   return Response.json({ ok: true });
 }
