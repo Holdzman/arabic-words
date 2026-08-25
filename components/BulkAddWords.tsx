@@ -17,15 +17,23 @@ interface ReviewRow {
 }
 
 function parseQueue(raw: string): QueueItem[] {
-  return raw
+  const groups = raw
     .split(/[\n,]/)
     .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .map((line) => {
-      const sepIndex = line.indexOf(" - ");
-      if (sepIndex === -1) return { text: line, hint: "" };
-      return { text: line.slice(0, sepIndex).trim(), hint: line.slice(sepIndex + 3).trim() };
-    });
+    .filter((line) => line.length > 0);
+
+  const items: QueueItem[] = [];
+  for (const group of groups) {
+    const sepIndex = group.indexOf(" - ");
+    if (sepIndex !== -1) {
+      items.push({ text: group.slice(0, sepIndex).trim(), hint: group.slice(sepIndex + 3).trim() });
+      continue;
+    }
+    for (const token of group.split(/\s+/)) {
+      if (token.length > 0) items.push({ text: token, hint: "" });
+    }
+  }
+  return items;
 }
 
 export function BulkAddWords({ onAdd }: { onAdd: (text: string, translation: string) => void }) {
