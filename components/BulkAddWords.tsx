@@ -36,7 +36,11 @@ function parseQueue(raw: string): QueueItem[] {
   return items;
 }
 
-export function BulkAddWords({ onAdd }: { onAdd: (text: string, translation: string) => void }) {
+export function BulkAddWords({
+  onAddMany,
+}: {
+  onAddMany: (items: { text: string; translation: string }[]) => number;
+}) {
   const [raw, setRaw] = useState("");
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [processedIndex, setProcessedIndex] = useState(0);
@@ -86,9 +90,15 @@ export function BulkAddWords({ onAdd }: { onAdd: (text: string, translation: str
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const parsed = parseQueue(raw);
-    if (parsed.length === 0) return;
-    setQueue(parsed);
-    void runProcessing(parsed, 0, []);
+    const seen = new Set<string>();
+    const deduped = parsed.filter((item) => {
+      if (seen.has(item.text)) return false;
+      seen.add(item.text);
+      return true;
+    });
+    if (deduped.length === 0) return;
+    setQueue(deduped);
+    void runProcessing(deduped, 0, []);
   }
 
   function retryFromError() {
@@ -105,14 +115,10 @@ export function BulkAddWords({ onAdd }: { onAdd: (text: string, translation: str
   }
 
   function addSelected() {
-    let count = 0;
-    for (const row of rows) {
-      if (row.checked) {
-        onAdd(row.candidate.arabic, row.candidate.translation);
-        count++;
-      }
-    }
-    setAddedCount(count);
+    const items = rows
+      .filter((r) => r.checked)
+      .map((r) => ({ text: r.candidate.arabic, translation: r.candidate.translation }));
+    setAddedCount(onAddMany(items));
     setStatus("done");
   }
 

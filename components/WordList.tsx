@@ -11,11 +11,13 @@ type Mode = "single" | "bulk";
 export function WordList({
   words,
   onAdd,
+  onAddMany,
   onToggleLearned,
   onDelete,
 }: {
   words: Word[];
   onAdd: (text: string, translation: string) => void;
+  onAddMany: (items: { text: string; translation: string }[]) => number;
   onToggleLearned: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
@@ -40,7 +42,7 @@ export function WordList({
         </button>
       </div>
 
-      {mode === "single" ? <AddWordForm onAdd={onAdd} /> : <BulkAddWords onAdd={onAdd} />}
+      {mode === "single" ? <AddWordForm onAdd={onAdd} /> : <BulkAddWords onAddMany={onAddMany} />}
 
       {words.length === 0 ? (
         <p className="empty-state">Пока нет слов. Добавьте первое арабское слово, которое хотите выучить.</p>

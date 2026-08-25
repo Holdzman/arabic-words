@@ -77,10 +77,26 @@ export function AppShell() {
   }
 
   function handleAdd(text: string, translation: string) {
+    if (words.some((w) => w.text.trim() === text.trim())) return;
     persist([
       { id: crypto.randomUUID(), text, translation, isLearned: false, dateAdded: new Date().toISOString() },
       ...words,
     ]);
+  }
+
+  function handleAddMany(items: { text: string; translation: string }[]): number {
+    const seen = new Set(words.map((w) => w.text.trim()));
+    const toAdd: Word[] = [];
+    for (const item of items) {
+      const key = item.text.trim();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      toAdd.push({ id: crypto.randomUUID(), text: item.text, translation: item.translation, isLearned: false, dateAdded: new Date().toISOString() });
+    }
+    if (toAdd.length > 0) {
+      void persist([...toAdd, ...words]);
+    }
+    return toAdd.length;
   }
 
   function handleToggleLearned(id: string) {
@@ -120,6 +136,7 @@ export function AppShell() {
           <WordList
             words={words}
             onAdd={handleAdd}
+            onAddMany={handleAddMany}
             onToggleLearned={handleToggleLearned}
             onDelete={handleDelete}
           />
