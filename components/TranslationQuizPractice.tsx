@@ -3,14 +3,18 @@
 import { useState } from "react";
 import type { TranslationQuizResponse, Word } from "@/lib/types";
 import { generateTranslationQuiz, GenerationError } from "@/lib/anthropicClient";
+import { languageConfig, type Language } from "@/lib/languages";
 
 export function TranslationQuizPractice({
   words,
+  language,
   onOpenSettings,
 }: {
   words: Word[];
+  language: Language;
   onOpenSettings: () => void;
 }) {
+  const config = languageConfig(language);
   const [isGenerating, setIsGenerating] = useState(false);
   const [result, setResult] = useState<TranslationQuizResponse | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -25,7 +29,7 @@ export function TranslationQuizPractice({
     setRevealed(false);
 
     try {
-      const quiz = await generateTranslationQuiz(words);
+      const quiz = await generateTranslationQuiz(language, words);
       setResult(quiz);
     } catch (err) {
       if (err instanceof GenerationError) {
@@ -42,7 +46,8 @@ export function TranslationQuizPractice({
   return (
     <section>
       <p className="help-text">
-        Прочитайте предложение на русском и попробуйте мысленно перевести его на арабский, затем проверьте себя.
+        Прочитайте предложение на русском и попробуйте мысленно перевести его на {config.locative}, затем проверьте
+        себя.
       </p>
 
       <button onClick={handleGenerate} disabled={isGenerating}>
@@ -62,10 +67,10 @@ export function TranslationQuizPractice({
 
       {result && (
         <div className="result-card">
-          <p className="result-translation">{result.russianSentence}</p>
+          <p className="result-translation">{result.prompt}</p>
           {revealed ? (
-            <p dir="rtl" className="result-arabic">
-              {result.arabicSentence}
+            <p dir={config.dir} className="result-arabic">
+              {result.answer}
             </p>
           ) : (
             <button type="button" onClick={() => setRevealed(true)}>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Word } from "@/lib/types";
+import type { Language } from "@/lib/languages";
 import { AddWordForm } from "./AddWordForm";
 import { BulkAddWords } from "./BulkAddWords";
 import { WordRow } from "./WordRow";
@@ -10,12 +11,14 @@ type Mode = "single" | "bulk";
 
 export function WordList({
   words,
+  language,
   onAdd,
   onAddMany,
   onToggleLearned,
   onDelete,
 }: {
   words: Word[];
+  language: Language;
   onAdd: (text: string, translation: string) => void;
   onAddMany: (items: { text: string; translation: string }[]) => number;
   onToggleLearned: (id: string) => void;
@@ -42,10 +45,14 @@ export function WordList({
         </button>
       </div>
 
-      {mode === "single" ? <AddWordForm onAdd={onAdd} /> : <BulkAddWords onAddMany={onAddMany} />}
+      {mode === "single" ? (
+        <AddWordForm onAdd={onAdd} language={language} />
+      ) : (
+        <BulkAddWords onAddMany={onAddMany} language={language} />
+      )}
 
       {words.length === 0 ? (
-        <p className="empty-state">Пока нет слов. Добавьте первое арабское слово, которое хотите выучить.</p>
+        <p className="empty-state">Пока нет слов на этом языке. Добавьте первое слово, которое хотите выучить.</p>
       ) : (
         <ul className="word-list">
           {words.map((word) => (

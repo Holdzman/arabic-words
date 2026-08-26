@@ -1,4 +1,5 @@
 import type { GenerateSentenceRequestBody, GenerationErrorResponse } from "@/lib/types";
+import type { Language } from "@/lib/languages";
 import { authErrorResponse } from "@/lib/server/authErrorResponse";
 import { resolveSessionApiKey } from "@/lib/server/resolveApiKey";
 
@@ -8,12 +9,28 @@ const MODEL = "claude-haiku-4-5";
 const MAX_TOKENS = 400;
 const TIMEOUT_MS = 25_000;
 
-const SYSTEM_PROMPT =
-  "Ты преподаватель арабского языка. Дано одно целевое арабское слово и список слов, которые ученик уже знает. " +
-  "Напиши ОДНО естественное, грамматически верное предложение на литературном арабском (MSA), используя целевое слово " +
-  "и, где это уместно, некоторые из уже известных слов. Уровень — начинающий/средний, одно короткое предложение. " +
-  "Затем дай точный перевод этого предложения на русский язык. Не используй арабскую лексику за пределами целевого " +
-  "слова и списка известных слов, кроме базовых служебных слов (частицы, местоимения, глагол 'быть'), необходимых для грамматики.";
+const LANGUAGE_NAMES: Record<Language, { genitive: string; locative: string }> = {
+  ar: { genitive: "арабского", locative: "арабском" },
+  it: { genitive: "итальянского", locative: "итальянском" },
+  en: { genitive: "английского", locative: "английском" },
+};
+
+function resolveLanguage(input: unknown): Language {
+  return input === "it" || input === "en" ? input : "ar";
+}
+
+function buildSystemPrompt(language: Language): string {
+  const { genitive, locative } = LANGUAGE_NAMES[language];
+  const styleClause = language === "ar" ? `литературном ${locative} (MSA)` : `естественном ${locative}`;
+  return (
+    `Ты преподаватель ${genitive} языка. Дано одно целевое слово на ${locative} языке и список слов, которые ` +
+    `ученик уже знает. Напиши ОДНО естественное, грамматически верное предложение на ${styleClause}, используя ` +
+    "целевое слово и, где это уместно, некоторые из уже известных слов. Уровень — начинающий/средний, одно " +
+    "короткое предложение. Затем дай точный перевод этого предложения на русский язык. Не используй лексику " +
+    `${genitive} языка за пределами целевого слова и списка известных слов, кроме базовых служебных слов ` +
+    "(частицы, местоимения, глагол 'быть'/аналог), необходимых для грамматики."
+  );
+}
 
 function errorResponse(status: number, code: GenerationErrorResponse["error"]["code"], message?: string) {
   const body: GenerationErrorResponse = { error: { code, message } };
@@ -36,6 +53,7 @@ export async function POST(request: Request) {
     return errorResponse(400, "missing_api_key");
   }
   const apiKey = resolved.apiKey;
+  const language = resolveLanguage(body.language);
 
   const knownWordsList = body.knownWords
     .map((w) => `${w.text} (${w.translation})`)
@@ -48,7 +66,7 @@ export async function POST(request: Request) {
   const anthropicRequestBody = {
     model: MODEL,
     max_tokens: MAX_TOKENS,
-    system: SYSTEM_PROMPT,
+    system: buildSystemPrompt(language),
     messages: [{ role: "user", content: userContent }],
     output_config: {
       format: {
@@ -56,10 +74,10 @@ export async function POST(request: Request) {
         schema: {
           type: "object",
           properties: {
-            arabic_sentence: { type: "string" },
+            target_sentence: { type: "string" },
             russian_translation: { type: "string" },
           },
-          required: ["arabic_sentence", "russian_translation"],
+          required: ["target_sentence", "russian_translation"],
           additionalProperties: false,
         },
       },
@@ -117,12 +135,12 @@ export async function POST(request: Request) {
 
   try {
     const parsed = JSON.parse(textBlock.text);
-    if (typeof parsed.arabic_sentence !== "string" || typeof parsed.russian_translation !== "string") {
+    if (typeof parsed.target_sentence !== "string" || typeof parsed.russian_translation !== "string") {
       return errorResponse(502, "malformed_response");
     }
     return Response.json({
-      arabicSentence: parsed.arabic_sentence,
-      russianTranslation: parsed.russian_translation,
+      sentence: parsed.target_sentence,
+      translation: parsed.russian_translation,
     });
   } catch {
     return errorResponse(502, "malformed_response");

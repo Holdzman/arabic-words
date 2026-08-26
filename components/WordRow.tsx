@@ -1,4 +1,5 @@
 import type { Word } from "@/lib/types";
+import { languageConfig } from "@/lib/languages";
 
 export function WordRow({
   word,
@@ -12,7 +13,7 @@ export function WordRow({
   return (
     <li className="word-row">
       <div className="word-row-text">
-        <span dir="rtl" className="word-arabic">
+        <span dir={languageConfig(word.language ?? "ar").dir} className="word-arabic">
           {word.text}
         </span>
         <span className="word-translation">{word.translation}</span>

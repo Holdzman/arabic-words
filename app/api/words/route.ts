@@ -5,6 +5,8 @@ import { findUserById, updateWords } from "@/lib/server/users";
 
 const MAX_WORDS = 5000;
 
+const VALID_LANGUAGES = new Set(["ar", "it", "en"]);
+
 function isValidWords(input: unknown): input is Word[] {
   if (!Array.isArray(input) || input.length > MAX_WORDS) return false;
   return input.every(
@@ -15,7 +17,8 @@ function isValidWords(input: unknown): input is Word[] {
       typeof (item as Word).text === "string" &&
       typeof (item as Word).translation === "string" &&
       typeof (item as Word).isLearned === "boolean" &&
-      typeof (item as Word).dateAdded === "string"
+      typeof (item as Word).dateAdded === "string" &&
+      ((item as Word).language === undefined || VALID_LANGUAGES.has((item as Word).language))
   );
 }
 

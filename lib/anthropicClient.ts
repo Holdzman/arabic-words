@@ -9,6 +9,7 @@ import type {
   TranslationQuizResponse,
   Word,
 } from "./types";
+import type { Language } from "./languages";
 
 const TRANSLATION_QUIZ_WORD_CAP = 30;
 
@@ -26,13 +27,18 @@ function raiseGenerationError(err: unknown): never {
   throw new GenerationError(code, errorMessage(code, data?.error?.message));
 }
 
-export async function generateSentence(targetWord: Word, knownWords: Word[]): Promise<GeneratedSentence> {
+export async function generateSentence(
+  language: Language,
+  targetWord: Word,
+  knownWords: Word[]
+): Promise<GeneratedSentence> {
   if (!hasApiKeyCached()) {
     throw new GenerationError("missing_api_key", errorMessage("missing_api_key"));
   }
 
   try {
     return await postJson<GeneratedSentence>("/api/generate-sentence", {
+      language,
       targetWord: { text: targetWord.text, translation: targetWord.translation },
       knownWords: knownWords.map((w) => ({ text: w.text, translation: w.translation })),
     });
@@ -57,13 +63,17 @@ export async function disambiguateWord(text: string, translationHint: string): P
   }
 }
 
-export async function generateTranslationQuiz(words: Word[]): Promise<TranslationQuizResponse> {
+export async function generateTranslationQuiz(
+  language: Language,
+  words: Word[]
+): Promise<TranslationQuizResponse> {
   if (!hasApiKeyCached()) {
     throw new GenerationError("missing_api_key", errorMessage("missing_api_key"));
   }
 
   try {
     return await postJson<TranslationQuizResponse>("/api/generate-translation-quiz", {
+      language,
       words: words.slice(0, TRANSLATION_QUIZ_WORD_CAP).map((w) => ({ text: w.text, translation: w.translation })),
     });
   } catch (err) {

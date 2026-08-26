@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Word } from "@/lib/types";
+import type { Language } from "@/lib/languages";
 import { WordExamplePractice } from "./WordExamplePractice";
 import { TranslationQuizPractice } from "./TranslationQuizPractice";
 
@@ -9,10 +10,12 @@ type Mode = "word" | "translate";
 
 export function Practice({
   words,
+  language,
   onMarkLearned,
   onOpenSettings,
 }: {
   words: Word[];
+  language: Language;
   onMarkLearned: (id: string) => void;
   onOpenSettings: () => void;
 }) {
@@ -42,9 +45,14 @@ export function Practice({
       </div>
 
       {mode === "word" ? (
-        <WordExamplePractice words={words} onMarkLearned={onMarkLearned} onOpenSettings={onOpenSettings} />
+        <WordExamplePractice
+          words={words}
+          language={language}
+          onMarkLearned={onMarkLearned}
+          onOpenSettings={onOpenSettings}
+        />
       ) : (
-        <TranslationQuizPractice words={words} onOpenSettings={onOpenSettings} />
+        <TranslationQuizPractice words={words} language={language} onOpenSettings={onOpenSettings} />
       )}
     </div>
   );

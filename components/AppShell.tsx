@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Word } from "@/lib/types";
+import { LANGUAGES, type Language } from "@/lib/languages";
 import * as account from "@/lib/account";
 import * as wordsApi from "@/lib/wordsApi";
 import { TabBar, type AppTab } from "./TabBar";
@@ -12,10 +13,15 @@ import { AuthGate } from "./AuthGate";
 
 type AuthStatus = "loading" | "anon" | "authed";
 
+function normalizeWords(words: Word[]): Word[] {
+  return words.map((w) => ({ ...w, language: w.language ?? "ar" }));
+}
+
 export function AppShell() {
   const [authStatus, setAuthStatus] = useState<AuthStatus>("loading");
   const [username, setUsername] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<AppTab>("words");
+  const [activeLanguage, setActiveLanguage] = useState<Language>("ar");
   const [words, setWords] = useState<Word[]>([]);
   const [hasApiKey, setHasApiKey] = useState(false);
 
@@ -31,7 +37,7 @@ export function AppShell() {
       const [w, key] = await Promise.all([wordsApi.getWords(), account.getApiKeyStatus()]);
       if (cancelled) return;
       setUsername(session.username ?? null);
-      setWords(w);
+      setWords(normalizeWords(w));
       setHasApiKey(key.hasApiKey);
       setAuthStatus("authed");
     })();
@@ -53,7 +59,7 @@ export function AppShell() {
 
   async function handleAuthenticated(newUsername: string, importedWords: Word[] | null) {
     setUsername(newUsername);
-    setWords(importedWords ?? (await wordsApi.getWords()));
+    setWords(normalizeWords(importedWords ?? (await wordsApi.getWords())));
     setHasApiKey((await account.getApiKeyStatus()).hasApiKey);
     setAuthStatus("authed");
   }
@@ -77,21 +83,37 @@ export function AppShell() {
   }
 
   function handleAdd(text: string, translation: string) {
-    if (words.some((w) => w.text.trim() === text.trim())) return;
+    if (words.some((w) => w.language === activeLanguage && w.text.trim() === text.trim())) return;
     persist([
-      { id: crypto.randomUUID(), text, translation, isLearned: false, dateAdded: new Date().toISOString() },
+      {
+        id: crypto.randomUUID(),
+        text,
+        translation,
+        isLearned: false,
+        dateAdded: new Date().toISOString(),
+        language: activeLanguage,
+      },
       ...words,
     ]);
   }
 
   function handleAddMany(items: { text: string; translation: string }[]): number {
-    const seen = new Set(words.map((w) => w.text.trim()));
+    const seen = new Set(
+      words.filter((w) => w.language === activeLanguage).map((w) => w.text.trim())
+    );
     const toAdd: Word[] = [];
     for (const item of items) {
       const key = item.text.trim();
       if (seen.has(key)) continue;
       seen.add(key);
-      toAdd.push({ id: crypto.randomUUID(), text: item.text, translation: item.translation, isLearned: false, dateAdded: new Date().toISOString() });
+      toAdd.push({
+        id: crypto.randomUUID(),
+        text: item.text,
+        translation: item.translation,
+        isLearned: false,
+        dateAdded: new Date().toISOString(),
+        language: activeLanguage,
+      });
     }
     if (toAdd.length > 0) {
       void persist([...toAdd, ...words]);
@@ -125,16 +147,31 @@ export function AppShell() {
     return <AuthGate onAuthenticated={handleAuthenticated} />;
   }
 
+  const languageWords = words.filter((w) => w.language === activeLanguage);
+
   return (
     <div className="app-shell">
       <header className="app-header">
         <h1>Арабские слова</h1>
+        <div className="mode-toggle">
+          {LANGUAGES.map((lang) => (
+            <button
+              key={lang.id}
+              type="button"
+              className={lang.id === activeLanguage ? "pill pill-active" : "pill"}
+              onClick={() => setActiveLanguage(lang.id)}
+            >
+              {lang.label}
+            </button>
+          ))}
+        </div>
       </header>
 
       <main className="app-main">
         {activeTab === "words" && (
           <WordList
-            words={words}
+            words={languageWords}
+            language={activeLanguage}
             onAdd={handleAdd}
             onAddMany={handleAddMany}
             onToggleLearned={handleToggleLearned}
@@ -143,7 +180,8 @@ export function AppShell() {
         )}
         {activeTab === "practice" && (
           <Practice
-            words={words}
+            words={languageWords}
+            language={activeLanguage}
             onMarkLearned={handleToggleLearned}
             onOpenSettings={() => setActiveTab("settings")}
           />

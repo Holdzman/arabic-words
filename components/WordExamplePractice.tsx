@@ -4,16 +4,20 @@ import { useMemo, useState } from "react";
 import type { GeneratedSentence, Word } from "@/lib/types";
 import { generateSentence, GenerationError } from "@/lib/anthropicClient";
 import { sampleKnownWords } from "@/lib/sampleKnownWords";
+import { languageConfig, type Language } from "@/lib/languages";
 
 export function WordExamplePractice({
   words,
+  language,
   onMarkLearned,
   onOpenSettings,
 }: {
   words: Word[];
+  language: Language;
   onMarkLearned: (id: string) => void;
   onOpenSettings: () => void;
 }) {
+  const config = languageConfig(language);
   const defaultWordId = useMemo(() => {
     const firstUnlearned = words.find((w) => !w.isLearned);
     return (firstUnlearned ?? words[0])?.id ?? null;
@@ -38,7 +42,7 @@ export function WordExamplePractice({
     const knownWords = sampleKnownWords(words, selectedWord.id);
 
     try {
-      const sentence = await generateSentence(selectedWord, knownWords);
+      const sentence = await generateSentence(language, selectedWord, knownWords);
       setResult(sentence);
     } catch (err) {
       if (err instanceof GenerationError) {
@@ -88,10 +92,10 @@ export function WordExamplePractice({
 
       {result && (
         <div className="result-card">
-          <p dir="rtl" className="result-arabic">
-            {result.arabicSentence}
+          <p dir={config.dir} className="result-arabic">
+            {result.sentence}
           </p>
-          <p className="result-translation">{result.russianTranslation}</p>
+          <p className="result-translation">{result.translation}</p>
           {selectedWord && !selectedWord.isLearned && (
             <button type="button" onClick={() => onMarkLearned(selectedWord.id)}>
               Отметить как выученное

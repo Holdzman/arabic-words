@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { disambiguateWord, GenerationError } from "@/lib/anthropicClient";
 import type { DisambiguationCandidate } from "@/lib/types";
+import { languageConfig, type Language } from "@/lib/languages";
 
 type Status = "idle" | "processing" | "reviewing" | "error" | "done";
 
@@ -38,9 +39,12 @@ function parseQueue(raw: string): QueueItem[] {
 
 export function BulkAddWords({
   onAddMany,
+  language,
 }: {
   onAddMany: (items: { text: string; translation: string }[]) => number;
+  language: Language;
 }) {
+  const config = languageConfig(language);
   const [raw, setRaw] = useState("");
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [processedIndex, setProcessedIndex] = useState(0);
@@ -48,6 +52,7 @@ export function BulkAddWords({
   const [status, setStatus] = useState<Status>("idle");
   const [errorText, setErrorText] = useState<string | null>(null);
   const [addedCount, setAddedCount] = useState(0);
+  const [skippedCount, setSkippedCount] = useState(0);
   const cancelledRef = useRef(false);
 
   function resetAll() {
@@ -58,6 +63,7 @@ export function BulkAddWords({
     setStatus("idle");
     setErrorText(null);
     setAddedCount(0);
+    setSkippedCount(0);
   }
 
   async function runProcessing(items: QueueItem[], startIndex: number, collected: ReviewRow[]) {
@@ -97,6 +103,20 @@ export function BulkAddWords({
       return true;
     });
     if (deduped.length === 0) return;
+
+    if (!config.supportsDisambiguation) {
+      const withHint = deduped.filter((item) => item.hint.length > 0);
+      setSkippedCount(deduped.length - withHint.length);
+      setRows(
+        withHint.map((item) => ({
+          candidate: { arabic: item.text, translation: item.hint, partOfSpeech: "" },
+          checked: true,
+        }))
+      );
+      setStatus("reviewing");
+      return;
+    }
+
     setQueue(deduped);
     void runProcessing(deduped, 0, []);
   }
@@ -130,7 +150,11 @@ export function BulkAddWords({
         <form onSubmit={handleSubmit}>
           <textarea
             className="bulk-textarea"
-            placeholder={"Слова через запятую или по одной на строку:\nخبز - печь, باذنجان, طباخ"}
+            placeholder={
+              config.supportsDisambiguation
+                ? "Слова через запятую или по одной на строку:\nخبز - печь, باذنجان, طباخ"
+                : "Слово - перевод, через запятую или по одному на строку:\ngatto - кот, cane - собака"
+            }
             value={raw}
             onChange={(e) => setRaw(e.target.value)}
             rows={6}
@@ -171,17 +195,23 @@ export function BulkAddWords({
       {status === "reviewing" && (
         <div className="candidate-picker">
           <p className="help-text">Проверьте варианты и снимите галочку с ненужных слов.</p>
+          {skippedCount > 0 && (
+            <p className="help-text">
+              Пропущено {skippedCount} слов без перевода — используйте формат «слово - перевод».
+            </p>
+          )}
           <ul className="word-list">
             {rows.map((row, i) => (
               <li key={i} className="word-row">
                 <label className="bulk-review-row">
                   <input type="checkbox" checked={row.checked} onChange={() => toggleRow(i)} />
                   <span className="word-row-text">
-                    <span dir="rtl" className="word-arabic">
+                    <span dir={config.dir} className="word-arabic">
                       {row.candidate.arabic}
                     </span>
                     <span className="word-translation">
-                      {row.candidate.translation} ({row.candidate.partOfSpeech})
+                      {row.candidate.translation}
+                      {row.candidate.partOfSpeech ? ` (${row.candidate.partOfSpeech})` : ""}
                     </span>
                   </span>
                 </label>

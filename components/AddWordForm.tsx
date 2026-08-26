@@ -3,10 +3,71 @@
 import { useState } from "react";
 import { disambiguateWord, GenerationError } from "@/lib/anthropicClient";
 import type { DisambiguationCandidate } from "@/lib/types";
+import { languageConfig, type Language } from "@/lib/languages";
 
 type Status = "idle" | "loading" | "picking" | "error";
 
-export function AddWordForm({ onAdd }: { onAdd: (text: string, translation: string) => void }) {
+function SimpleAddWordForm({
+  onAdd,
+  language,
+}: {
+  onAdd: (text: string, translation: string) => void;
+  language: Language;
+}) {
+  const config = languageConfig(language);
+  const [text, setText] = useState("");
+  const [translation, setTranslation] = useState("");
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmedText = text.trim();
+    const trimmedTranslation = translation.trim();
+    if (!trimmedText || !trimmedTranslation) return;
+    onAdd(trimmedText, trimmedTranslation);
+    setText("");
+    setTranslation("");
+  }
+
+  return (
+    <div className="add-word-form">
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          dir={config.dir}
+          placeholder={config.placeholder}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="Перевод на русский"
+          value={translation}
+          onChange={(e) => setTranslation(e.target.value)}
+        />
+        <button type="submit" disabled={!text.trim() || !translation.trim()}>
+          Добавить
+        </button>
+      </form>
+    </div>
+  );
+}
+
+export function AddWordForm({
+  onAdd,
+  language,
+}: {
+  onAdd: (text: string, translation: string) => void;
+  language: Language;
+}) {
+  const config = languageConfig(language);
+  if (!config.supportsDisambiguation) {
+    return <SimpleAddWordForm onAdd={onAdd} language={language} />;
+  }
+
+  return <ArabicAddWordForm onAdd={onAdd} />;
+}
+
+function ArabicAddWordForm({ onAdd }: { onAdd: (text: string, translation: string) => void }) {
   const [text, setText] = useState("");
   const [translationHint, setTranslationHint] = useState("");
   const [status, setStatus] = useState<Status>("idle");

@@ -1,14 +1,17 @@
+import type { Language } from "./languages";
+
 export interface Word {
   id: string;
   text: string;
   translation: string;
   isLearned: boolean;
   dateAdded: string;
+  language: Language;
 }
 
 export interface GeneratedSentence {
-  arabicSentence: string;
-  russianTranslation: string;
+  sentence: string;
+  translation: string;
 }
 
 export type GenerationErrorCode =
@@ -32,6 +35,7 @@ export interface GenerationErrorResponse {
 }
 
 export interface GenerateSentenceRequestBody {
+  language: Language;
   targetWord: { text: string; translation: string };
   knownWords: { text: string; translation: string }[];
 }
@@ -52,11 +56,12 @@ export interface DisambiguateWordResponse {
 }
 
 export interface TranslationQuizResponse {
-  russianSentence: string;
-  arabicSentence: string;
+  prompt: string;
+  answer: string;
 }
 
 export interface GenerateTranslationQuizRequestBody {
+  language: Language;
   words: { text: string; translation: string }[];
 }
 

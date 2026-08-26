@@ -22,6 +22,7 @@ function sanitizeImportWords(input: unknown): Word[] | null {
     ) {
       return null;
     }
+    const language = (item as Word).language;
     sanitized.push({
       id: typeof (item as Word).id === "string" ? (item as Word).id : randomUUID(),
       text: (item as Word).text,
@@ -29,6 +30,7 @@ function sanitizeImportWords(input: unknown): Word[] | null {
       isLearned: Boolean((item as Word).isLearned),
       dateAdded:
         typeof (item as Word).dateAdded === "string" ? (item as Word).dateAdded : new Date().toISOString(),
+      language: language === "it" || language === "en" ? language : "ar",
     });
   }
   return sanitized;
