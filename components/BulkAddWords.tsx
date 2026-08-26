@@ -167,10 +167,10 @@ export function BulkAddWords({
         <div className="error-box">
           <p>{errorText}</p>
           <div className="candidate-actions">
-            <button type="button" onClick={retryFromError}>
+            <button type="button" className="btn-secondary" onClick={retryFromError}>
               Повторить
             </button>
-            <button type="button" onClick={resetAll}>
+            <button type="button" className="pill-danger" onClick={resetAll}>
               Отмена
             </button>
           </div>
@@ -202,7 +202,7 @@ export function BulkAddWords({
             <button type="button" onClick={addSelected} disabled={checkedCount === 0}>
               Добавить выбранные ({checkedCount})
             </button>
-            <button type="button" onClick={resetAll}>
+            <button type="button" className="pill-danger" onClick={resetAll}>
               Отмена
             </button>
           </div>

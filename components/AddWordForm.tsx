@@ -92,10 +92,10 @@ export function AddWordForm({
         <div className="error-box">
           <p>{errorText}</p>
           <div className="candidate-actions">
-            <button type="button" onClick={fetchCandidates}>
+            <button type="button" className="btn-secondary" onClick={fetchCandidates}>
               Повторить
             </button>
-            <button type="button" onClick={addAsIs}>
+            <button type="button" className="btn-secondary" onClick={addAsIs}>
               Добавить как есть
             </button>
             <button type="button" className="pill-danger" onClick={reset}>
@@ -124,7 +124,7 @@ export function AddWordForm({
             ))}
           </ul>
           <div className="candidate-actions">
-            <button type="button" onClick={addAsIs}>
+            <button type="button" className="btn-secondary" onClick={addAsIs}>
               Добавить как есть: {text}
             </button>
             <button type="button" className="pill-danger" onClick={reset}>

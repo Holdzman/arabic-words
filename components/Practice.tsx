@@ -26,7 +26,7 @@ export function Practice({
   }
 
   return (
-    <div>
+    <section>
       <div className="mode-toggle">
         <button
           type="button"
@@ -55,6 +55,6 @@ export function Practice({
       ) : (
         <TranslationQuizPractice key={language} words={words} language={language} onOpenSettings={onOpenSettings} />
       )}
-    </div>
+    </section>
   );
 }

@@ -20,7 +20,7 @@ export function WordRow({
       </div>
       <div className="word-row-actions">
         <button
-          className={word.isLearned ? "pill pill-active" : "pill"}
+          className={word.isLearned ? "pill pill-success" : "pill"}
           onClick={() => onToggleLearned(word.id)}
         >
           {word.isLearned ? "Выучено" : "Отметить"}

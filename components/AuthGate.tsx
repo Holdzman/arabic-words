@@ -153,7 +153,12 @@ export function AuthGate({
                 <button type="button" disabled={isSubmitting} onClick={() => finishSignup(legacyWords)}>
                   Импортировать
                 </button>
-                <button type="button" disabled={isSubmitting} onClick={() => finishSignup(null)}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={isSubmitting}
+                  onClick={() => finishSignup(null)}
+                >
                   Пропустить
                 </button>
               </div>
