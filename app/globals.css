@@ -119,7 +119,7 @@ button {
   transition: background-color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-out);
 }
 
-button:hover {
+button:not(:disabled):hover {
   background: var(--color-accent-hover);
 }
 
