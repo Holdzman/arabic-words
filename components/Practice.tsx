@@ -46,13 +46,14 @@ export function Practice({
 
       {mode === "word" ? (
         <WordExamplePractice
+          key={language}
           words={words}
           language={language}
           onMarkLearned={onMarkLearned}
           onOpenSettings={onOpenSettings}
         />
       ) : (
-        <TranslationQuizPractice words={words} language={language} onOpenSettings={onOpenSettings} />
+        <TranslationQuizPractice key={language} words={words} language={language} onOpenSettings={onOpenSettings} />
       )}
     </div>
   );

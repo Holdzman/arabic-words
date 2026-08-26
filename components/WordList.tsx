@@ -46,9 +46,9 @@ export function WordList({
       </div>
 
       {mode === "single" ? (
-        <AddWordForm onAdd={onAdd} language={language} />
+        <AddWordForm key={language} onAdd={onAdd} language={language} />
       ) : (
-        <BulkAddWords onAddMany={onAddMany} language={language} />
+        <BulkAddWords key={language} onAddMany={onAddMany} language={language} />
       )}
 
       {words.length === 0 ? (
