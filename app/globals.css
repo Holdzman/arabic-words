@@ -290,7 +290,7 @@ label {
   font-weight: 400;
 }
 
-.candidate-option:hover {
+.candidate-option:not(:disabled):hover {
   background: var(--color-accent-subtle);
 }
 
