@@ -5,8 +5,9 @@ import type { Word } from "@/lib/types";
 import type { Language } from "@/lib/languages";
 import { WordExamplePractice } from "./WordExamplePractice";
 import { TranslationQuizPractice } from "./TranslationQuizPractice";
+import { MultipleChoicePractice } from "./MultipleChoicePractice";
 
-type Mode = "word" | "translate";
+type Mode = "word" | "translate" | "quiz";
 
 export function Practice({
   words,
@@ -42,9 +43,16 @@ export function Practice({
         >
           Перевод
         </button>
+        <button
+          type="button"
+          className={mode === "quiz" ? "pill pill-active" : "pill"}
+          onClick={() => setMode("quiz")}
+        >
+          Тест
+        </button>
       </div>
 
-      {mode === "word" ? (
+      {mode === "word" && (
         <WordExamplePractice
           key={language}
           words={words}
@@ -52,9 +60,11 @@ export function Practice({
           onMarkLearned={onMarkLearned}
           onOpenSettings={onOpenSettings}
         />
-      ) : (
+      )}
+      {mode === "translate" && (
         <TranslationQuizPractice key={language} words={words} language={language} onOpenSettings={onOpenSettings} />
       )}
+      {mode === "quiz" && <MultipleChoicePractice key={language} words={words} language={language} />}
     </section>
   );
 }

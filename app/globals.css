@@ -298,6 +298,21 @@ label {
   transform: none;
 }
 
+.quiz-option-correct {
+  background: var(--color-success);
+  color: var(--color-success-foreground);
+}
+
+.quiz-option-incorrect {
+  background: var(--color-danger);
+  color: var(--color-danger-foreground);
+}
+
+.candidate-option.quiz-option-correct:disabled,
+.candidate-option.quiz-option-incorrect:disabled {
+  opacity: 1;
+}
+
 .candidate-actions {
   display: flex;
   flex-wrap: wrap;
