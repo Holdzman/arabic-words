@@ -41,12 +41,13 @@ export interface GenerateSentenceRequestBody {
 }
 
 export interface DisambiguationCandidate {
-  arabic: string;
+  text: string;
   translation: string;
   partOfSpeech: string;
 }
 
 export interface DisambiguateWordRequestBody {
+  language: Language;
   text: string;
   translationHint?: string;
 }

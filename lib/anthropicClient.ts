@@ -47,13 +47,18 @@ export async function generateSentence(
   }
 }
 
-export async function disambiguateWord(text: string, translationHint: string): Promise<DisambiguationCandidate[]> {
+export async function disambiguateWord(
+  language: Language,
+  text: string,
+  translationHint: string
+): Promise<DisambiguationCandidate[]> {
   if (!hasApiKeyCached()) {
     throw new GenerationError("missing_api_key", errorMessage("missing_api_key"));
   }
 
   try {
     const res = await postJson<DisambiguateWordResponse>("/api/disambiguate-word", {
+      language,
       text,
       translationHint: translationHint || undefined,
     });

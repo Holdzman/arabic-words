@@ -1,4 +1,5 @@
 import type { DisambiguateWordRequestBody, GenerationErrorResponse } from "@/lib/types";
+import type { Language } from "@/lib/languages";
 import { authErrorResponse } from "@/lib/server/authErrorResponse";
 import { resolveSessionApiKey } from "@/lib/server/resolveApiKey";
 
@@ -8,7 +9,17 @@ const MODEL = "claude-haiku-4-5";
 const MAX_TOKENS = 500;
 const TIMEOUT_MS = 25_000;
 
-const SYSTEM_PROMPT =
+const LANGUAGE_NAMES: Record<Language, { genitive: string; locative: string }> = {
+  ar: { genitive: "арабского", locative: "арабском" },
+  it: { genitive: "итальянского", locative: "итальянском" },
+  en: { genitive: "английского", locative: "английском" },
+};
+
+function resolveLanguage(input: unknown): Language {
+  return input === "it" || input === "en" ? input : "ar";
+}
+
+const ARABIC_SYSTEM_PROMPT =
   "Ты преподаватель арабского языка. Пользователь вводит арабское слово (часто без огласовок — ташкиль), " +
   "которое хочет добавить в свой личный словарь для заучивания. Одна и та же цепочка согласных без огласовок " +
   "может иметь несколько разных прочтений с разными огласовками и разными значениями — например 'خبز' может быть " +
@@ -19,6 +30,20 @@ const SYSTEM_PROMPT =
   "полными огласовками (ташкиль), точный перевод на русский язык, часть речи (например 'существительное', " +
   "'глагол', 'прилагательное'). Если у слова есть только одно разумное прочтение, верни ровно один вариант. " +
   "Максимум 4 варианта, отсортированных от наиболее вероятного к наименее вероятному.";
+
+function buildLookupSystemPrompt(language: Language): string {
+  const { genitive, locative } = LANGUAGE_NAMES[language];
+  return (
+    `Ты преподаватель ${genitive} языка и переводчик между ${locative} языком и русским. Пользователь ввёл ` +
+    `одно слово или короткую фразу — она может быть написана либо на ${locative} языке, либо по-русски. ` +
+    "Определи, на каком языке введён текст, и найди его точный перевод на другой язык (если введено на " +
+    `${locative} — переведи на русский; если по-русски — переведи на ${locative}). Если у слова есть несколько ` +
+    "распространённых значений с разными переводами, верни до 2 наиболее вероятных вариантов, отсортированных " +
+    "от наиболее вероятного к менее вероятному, для каждого дай короткую уточняющую помету на русском (например " +
+    "тема или контекст, поясняющий разницу в значении). Если разумное значение только одно — верни ровно один " +
+    "вариант."
+  );
+}
 
 function errorResponse(status: number, code: GenerationErrorResponse["error"]["code"], message?: string) {
   const body: GenerationErrorResponse = { error: { code, message } };
@@ -41,6 +66,7 @@ export async function POST(request: Request) {
     return errorResponse(400, "missing_api_key");
   }
   const apiKey = resolved.apiKey;
+  const language = resolveLanguage(body.language);
 
   const text = body.text?.trim();
   if (!text) {
@@ -48,14 +74,17 @@ export async function POST(request: Request) {
   }
 
   const hint = body.translationHint?.trim();
-  const userContent = hint
-    ? `Слово: ${text}.\nПодсказка от пользователя (предполагаемый перевод): ${hint}.`
-    : `Слово: ${text}.\nПодсказки нет — определи все правдоподобные прочтения.`;
+  const userContent =
+    language === "ar"
+      ? hint
+        ? `Слово: ${text}.\nПодсказка от пользователя (предполагаемый перевод): ${hint}.`
+        : `Слово: ${text}.\nПодсказки нет — определи все правдоподобные прочтения.`
+      : `Ввод пользователя: ${text}`;
 
   const anthropicRequestBody = {
     model: MODEL,
     max_tokens: MAX_TOKENS,
-    system: SYSTEM_PROMPT,
+    system: language === "ar" ? ARABIC_SYSTEM_PROMPT : buildLookupSystemPrompt(language),
     messages: [{ role: "user", content: userContent }],
     output_config: {
       format: {
@@ -68,11 +97,11 @@ export async function POST(request: Request) {
               items: {
                 type: "object",
                 properties: {
-                  arabic: { type: "string" },
+                  word: { type: "string" },
                   translation: { type: "string" },
-                  part_of_speech: { type: "string" },
+                  note: { type: "string" },
                 },
-                required: ["arabic", "translation", "part_of_speech"],
+                required: ["word", "translation", "note"],
                 additionalProperties: false,
               },
             },
@@ -139,21 +168,18 @@ export async function POST(request: Request) {
       return errorResponse(502, "malformed_response");
     }
     for (const c of parsed.candidates) {
-      if (
-        typeof c.arabic !== "string" ||
-        typeof c.translation !== "string" ||
-        typeof c.part_of_speech !== "string"
-      ) {
+      if (typeof c.word !== "string" || typeof c.translation !== "string" || typeof c.note !== "string") {
         return errorResponse(502, "malformed_response");
       }
     }
+    const cap = language === "ar" ? 4 : 2;
     return Response.json({
       candidates: parsed.candidates
-        .slice(0, 4)
-        .map((c: { arabic: string; translation: string; part_of_speech: string }) => ({
-          arabic: c.arabic,
+        .slice(0, cap)
+        .map((c: { word: string; translation: string; note: string }) => ({
+          text: c.word,
           translation: c.translation,
-          partOfSpeech: c.part_of_speech,
+          partOfSpeech: c.note,
         })),
     });
   } catch {

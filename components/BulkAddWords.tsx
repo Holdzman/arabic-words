@@ -52,7 +52,6 @@ export function BulkAddWords({
   const [status, setStatus] = useState<Status>("idle");
   const [errorText, setErrorText] = useState<string | null>(null);
   const [addedCount, setAddedCount] = useState(0);
-  const [skippedCount, setSkippedCount] = useState(0);
   const cancelledRef = useRef(false);
 
   function resetAll() {
@@ -63,7 +62,6 @@ export function BulkAddWords({
     setStatus("idle");
     setErrorText(null);
     setAddedCount(0);
-    setSkippedCount(0);
   }
 
   async function runProcessing(items: QueueItem[], startIndex: number, collected: ReviewRow[]) {
@@ -76,7 +74,7 @@ export function BulkAddWords({
       if (cancelledRef.current) return;
 
       try {
-        const candidates = await disambiguateWord(items[i].text, items[i].hint);
+        const candidates = await disambiguateWord(language, items[i].text, items[i].hint);
         if (cancelledRef.current) return;
         collected.push({ candidate: candidates[0], checked: true });
       } catch (err) {
@@ -104,19 +102,6 @@ export function BulkAddWords({
     });
     if (deduped.length === 0) return;
 
-    if (!config.supportsDisambiguation) {
-      const withHint = deduped.filter((item) => item.hint.length > 0);
-      setSkippedCount(deduped.length - withHint.length);
-      setRows(
-        withHint.map((item) => ({
-          candidate: { arabic: item.text, translation: item.hint, partOfSpeech: "" },
-          checked: true,
-        }))
-      );
-      setStatus("reviewing");
-      return;
-    }
-
     setQueue(deduped);
     void runProcessing(deduped, 0, []);
   }
@@ -137,7 +122,7 @@ export function BulkAddWords({
   function addSelected() {
     const items = rows
       .filter((r) => r.checked)
-      .map((r) => ({ text: r.candidate.arabic, translation: r.candidate.translation }));
+      .map((r) => ({ text: r.candidate.text, translation: r.candidate.translation }));
     setAddedCount(onAddMany(items));
     setStatus("done");
   }
@@ -153,7 +138,7 @@ export function BulkAddWords({
             placeholder={
               config.supportsDisambiguation
                 ? "Слова через запятую или по одной на строку:\nخبز - печь, باذنجان, طباخ"
-                : "Слово - перевод, через запятую или по одному на строку:\ngatto - кот, cane - собака"
+                : `Слова на ${config.locative} (или по-русски) через запятую или по одному на строку:\ngatto, cane, привет`
             }
             value={raw}
             onChange={(e) => setRaw(e.target.value)}
@@ -195,11 +180,6 @@ export function BulkAddWords({
       {status === "reviewing" && (
         <div className="candidate-picker">
           <p className="help-text">Проверьте варианты и снимите галочку с ненужных слов.</p>
-          {skippedCount > 0 && (
-            <p className="help-text">
-              Пропущено {skippedCount} слов без перевода — используйте формат «слово - перевод».
-            </p>
-          )}
           <ul className="word-list">
             {rows.map((row, i) => (
               <li key={i} className="word-row">
@@ -207,7 +187,7 @@ export function BulkAddWords({
                   <input type="checkbox" checked={row.checked} onChange={() => toggleRow(i)} />
                   <span className="word-row-text">
                     <span dir={config.dir} className="word-arabic">
-                      {row.candidate.arabic}
+                      {row.candidate.text}
                     </span>
                     <span className="word-translation">
                       {row.candidate.translation}
