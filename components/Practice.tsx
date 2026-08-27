@@ -50,7 +50,7 @@ export function Practice({
           className={mode === "quiz" ? "pill pill-active" : "pill"}
           onClick={() => setMode("quiz")}
         >
-          Тест
+          Сегодня
         </button>
       </div>
 
