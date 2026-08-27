@@ -2,13 +2,13 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Арабские слова",
-  description: "Личный тренажёр арабской лексики с примерами от Claude",
+  title: "Иностранные слова",
+  description: "Личный словарь-тренажёр иностранных слов с примерами от Claude",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Арабские слова",
+    title: "Слова",
   },
   icons: {
     icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f172a",
+  themeColor: "#315fcf",
   width: "device-width",
   initialScale: 1,
 };

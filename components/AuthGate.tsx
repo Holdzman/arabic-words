@@ -71,7 +71,7 @@ export function AuthGate({
   return (
     <div className="app-shell">
       <header className="app-header">
-        <h1>Арабские слова</h1>
+        <h1>Иностранные слова</h1>
       </header>
       <main className="app-main">
         <section>
