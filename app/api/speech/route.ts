@@ -1,9 +1,16 @@
 import { authErrorResponse } from "@/lib/server/authErrorResponse";
 import { getSessionUserId } from "@/lib/server/session";
+import type { Language } from "@/lib/languages";
 
 const OPENAI_SPEECH_ENDPOINT = "https://api.openai.com/v1/audio/speech";
 const ALLOWED_VOICES = new Set(["marin", "cedar", "coral", "onyx"]);
+const ALLOWED_LANGUAGES = new Set<Language>(["ar", "it"]);
 const MAX_INPUT_LENGTH = 1000;
+
+const SPEECH_INSTRUCTIONS: Record<"ar" | "it", string> = {
+  ar: "Speak in clear, natural Modern Standard Arabic. Use a warm native accent, careful pronunciation, and a calm teaching pace. Do not translate or add words.",
+  it: "Speak in clear, natural Italian as a native speaker from Italy. Use careful pronunciation and a calm teaching pace. Do not translate or add words.",
+};
 
 export async function POST(request: Request) {
   if (!(await getSessionUserId())) {
@@ -15,7 +22,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "OPENAI_API_KEY is not configured" }, { status: 503 });
   }
 
-  let body: { input?: unknown; voice?: unknown };
+  let body: { input?: unknown; voice?: unknown; language?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -24,7 +31,16 @@ export async function POST(request: Request) {
 
   const input = typeof body.input === "string" ? body.input.trim() : "";
   const voice = typeof body.voice === "string" ? body.voice : "";
-  if (!input || input.length > MAX_INPUT_LENGTH || !ALLOWED_VOICES.has(voice)) {
+  // Requests from the Arabic-only client released before this field existed
+  // remain valid while an updated deployment rolls out.
+  const language = body.language === undefined ? "ar" : body.language;
+  if (
+    !input ||
+    input.length > MAX_INPUT_LENGTH ||
+    !ALLOWED_VOICES.has(voice) ||
+    typeof language !== "string" ||
+    !ALLOWED_LANGUAGES.has(language as Language)
+  ) {
     return Response.json({ error: "invalid speech request" }, { status: 400 });
   }
 
@@ -40,8 +56,7 @@ export async function POST(request: Request) {
         model: "gpt-4o-mini-tts",
         voice,
         input,
-        instructions:
-          "Speak in clear, natural Modern Standard Arabic. Use a warm native accent, careful pronunciation, and a calm teaching pace. Do not translate or add words.",
+        instructions: SPEECH_INSTRUCTIONS[language as "ar" | "it"],
         response_format: "mp3",
       }),
       signal: AbortSignal.timeout(30_000),

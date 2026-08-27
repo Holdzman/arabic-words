@@ -35,11 +35,12 @@ Before starting roadmap item #3, restate its acceptance criteria from the origin
 - System narrator selection is persisted per language in `localStorage`.
 - Mobile Safari replay truncation is handled by retaining the utterance and delaying replay after `speechSynthesis.cancel()`.
 
-### Natural Arabic TTS
+### Natural Arabic and Italian TTS
 
 - Authenticated server route: `app/api/speech/route.ts`.
 - Model: `gpt-4o-mini-tts`.
 - Cloud narrators: Marin, Cedar, Coral, and Onyx. The user currently prefers Onyx.
+- Cloud narration is available for Arabic and Italian, including on mobile devices where browser-provided Italian voices are limited.
 - The OpenAI API key is server-side only in Vercel as `OPENAI_API_KEY`; never expose it to the client or commit it.
 - Generated MP3 is reused for repeated playback of the same exercise.
 - System voices remain available as a fallback.
@@ -55,7 +56,7 @@ Before starting roadmap item #3, restate its acceptance criteria from the origin
 
 - Next.js 16.3.2, React 19, TypeScript.
 - User data is stored in Postgres through the existing server modules.
-- Required production variables include the existing database/session/Anthropic configuration plus `OPENAI_API_KEY` for Arabic TTS.
+- Required production variables include the existing database/session/Anthropic configuration plus `OPENAI_API_KEY` for cloud TTS.
 - `OPENAI_API_KEY` is a shared Vercel secret linked to the `arabic-words` project for Production and Preview.
 - Never print, read back, or copy secret values into logs, commits, issues, or chat.
 

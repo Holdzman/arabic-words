@@ -18,6 +18,12 @@ const CLOUD_VOICES = [
   { id: "cloud:onyx", name: "Onyx — низкий" },
 ];
 
+const CLOUD_TTS_LANGUAGES = new Set<Language>(["ar", "it"]);
+
+function defaultCloudVoice(language: Language): string {
+  return language === "ar" ? "cloud:marin" : language === "it" ? "cloud:onyx" : "";
+}
+
 function voiceId(voice: SpeechSynthesisVoice): string {
   return voice.voiceURI || `${voice.name}-${voice.lang}`;
 }
@@ -47,7 +53,7 @@ export function ListeningPractice({
   const [hasPlayed, setHasPlayed] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedVoiceId, setSelectedVoiceId] = useState(language === "ar" ? "cloud:marin" : "");
+  const [selectedVoiceId, setSelectedVoiceId] = useState(defaultCloudVoice(language));
   const [cloudAudio, setCloudAudio] = useState<{ key: string; url: string } | null>(null);
   const [isAudioLoading, setIsAudioLoading] = useState(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -66,9 +72,9 @@ export function ListeningPractice({
         .sort((a, b) => voiceQualityScore(b) - voiceQualityScore(a) || a.name.localeCompare(b.name));
       setVoices(matching);
       const saved = window.localStorage.getItem(`listening-voice-${language}`);
-      const savedCloudVoice = language === "ar" && CLOUD_VOICES.some((voice) => voice.id === saved) ? saved : null;
+      const savedCloudVoice = CLOUD_TTS_LANGUAGES.has(language) && CLOUD_VOICES.some((voice) => voice.id === saved) ? saved : null;
       const preferred = matching.find((voice) => voiceId(voice) === saved) ?? matching[0];
-      setSelectedVoiceId(savedCloudVoice ?? (preferred ? voiceId(preferred) : language === "ar" ? "cloud:marin" : ""));
+      setSelectedVoiceId(savedCloudVoice ?? (preferred ? voiceId(preferred) : defaultCloudVoice(language)));
     }
 
     const initialLoad = window.setTimeout(loadVoices, 0);
@@ -99,7 +105,7 @@ export function ListeningPractice({
       const response = await fetch("/api/speech", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ input: text, voice: voiceIdValue.replace("cloud:", "") }),
+        body: JSON.stringify({ input: text, voice: voiceIdValue.replace("cloud:", ""), language }),
       });
       if (!response.ok) throw new Error("speech request failed");
       const url = URL.createObjectURL(await response.blob());
@@ -130,7 +136,7 @@ export function ListeningPractice({
     try {
       const quiz = await generateTranslationQuiz(language, words);
       setResult(quiz);
-      const voice = selectedVoiceId || (language === "ar" ? "cloud:marin" : "");
+      const voice = selectedVoiceId || defaultCloudVoice(language);
       if (voice.startsWith("cloud:")) await loadCloudAudio(quiz.answer, voice);
     } catch (err) {
       if (err instanceof GenerationError) {
@@ -215,12 +221,12 @@ export function ListeningPractice({
 
       {result && (
         <div className="listening-card">
-          {speechSupported || language === "ar" ? (
+          {speechSupported || CLOUD_TTS_LANGUAGES.has(language) ? (
             <>
               <button type="button" className="listen-button" onClick={speak} disabled={isAudioLoading}>
                 {isAudioLoading ? "Готовлю голос…" : isSpeaking ? "↻ Начать сначала" : hasPlayed ? "↻ Прослушать ещё раз" : "▶ Прослушать"}
               </button>
-              {(voices.length > 0 || language === "ar") && (
+              {(voices.length > 0 || CLOUD_TTS_LANGUAGES.has(language)) && (
                 <div>
                   <label htmlFor="listening-voice">Рассказчик</label>
                   <select
@@ -228,7 +234,7 @@ export function ListeningPractice({
                     value={selectedVoiceId}
                     onChange={(event) => selectVoice(event.target.value)}
                   >
-                    {language === "ar" && (
+                    {CLOUD_TTS_LANGUAGES.has(language) && (
                       <optgroup label="Облачные голоса — OpenAI">
                         {CLOUD_VOICES.map((voice) => (
                           <option key={voice.id} value={voice.id}>{voice.name}</option>
