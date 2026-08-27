@@ -8,8 +8,9 @@ import { WordExamplePractice } from "./WordExamplePractice";
 import { TranslationQuizPractice } from "./TranslationQuizPractice";
 import { MultipleChoicePractice } from "./MultipleChoicePractice";
 import { ListeningPractice } from "./ListeningPractice";
+import { WritingPractice } from "./WritingPractice";
 
-type Mode = "word" | "translate" | "listen" | "quiz";
+type Mode = "word" | "translate" | "listen" | "quiz" | "write";
 
 export function Practice({
   words,
@@ -61,6 +62,13 @@ export function Practice({
         >
           Сегодня
         </button>
+        <button
+          type="button"
+          className={mode === "write" ? "pill pill-active" : "pill"}
+          onClick={() => setMode("write")}
+        >
+          Письмо
+        </button>
       </div>
 
       {mode === "word" && (
@@ -80,6 +88,9 @@ export function Practice({
       )}
       {mode === "quiz" && (
         <MultipleChoicePractice key={language} words={words} language={language} onAnswer={onAnswer} />
+      )}
+      {mode === "write" && (
+        <WritingPractice key={language} words={words} language={language} onAnswer={onAnswer} />
       )}
     </section>
   );
