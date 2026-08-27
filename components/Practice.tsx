@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Word } from "@/lib/types";
 import type { Language } from "@/lib/languages";
+import type { SrsRating } from "@/lib/srs";
 import { WordExamplePractice } from "./WordExamplePractice";
 import { TranslationQuizPractice } from "./TranslationQuizPractice";
 import { MultipleChoicePractice } from "./MultipleChoicePractice";
@@ -19,7 +20,7 @@ export function Practice({
   words: Word[];
   language: Language;
   onMarkLearned: (id: string) => void;
-  onAnswer: (id: string, correct: boolean) => void;
+  onAnswer: (id: string, rating: SrsRating) => void;
   onOpenSettings: () => void;
 }) {
   const [mode, setMode] = useState<Mode>("word");

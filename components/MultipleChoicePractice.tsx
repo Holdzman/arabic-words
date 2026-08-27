@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Word } from "@/lib/types";
 import { languageConfig, type Language } from "@/lib/languages";
-import { isDue } from "@/lib/srs";
+import { isDue, reviewSrsState, type SrsRating } from "@/lib/srs";
 
 type Direction = "toTranslation" | "toWord";
 
@@ -15,16 +15,25 @@ interface Question {
 interface ActiveSession {
   queue: Word[];
   total: number;
-  correct: number;
-  incorrect: number;
+  ratings: Record<SrsRating, number>;
   question: Question;
   selectedId: string | null;
+  rating: SrsRating | null;
 }
 
 interface SessionResult {
-  correct: number;
   total: number;
+  ratings: Record<SrsRating, number>;
 }
+
+const RATING_LABELS: Record<SrsRating, string> = {
+  again: "Again",
+  hard: "Hard",
+  good: "Good",
+  easy: "Easy",
+};
+
+const RATING_ORDER: SrsRating[] = ["again", "hard", "good", "easy"];
 
 function shuffle<T>(items: T[]): T[] {
   return [...items].sort(() => Math.random() - 0.5);
@@ -42,7 +51,7 @@ export function MultipleChoicePractice({
 }: {
   words: Word[];
   language: Language;
-  onAnswer: (id: string, correct: boolean) => void;
+  onAnswer: (id: string, rating: SrsRating) => void;
 }) {
   const config = languageConfig(language);
   const [direction, setDirection] = useState<Direction>("toTranslation");
@@ -54,23 +63,29 @@ export function MultipleChoicePractice({
     setSession({
       queue,
       total: queue.length,
-      correct: 0,
-      incorrect: 0,
+      ratings: { again: 0, hard: 0, good: 0, easy: 0 },
       question: buildQuestion(queue[0], words),
       selectedId: null,
+      rating: null,
     });
     setLastResult(null);
   }
 
   function pickOption(word: Word) {
     if (!session || session.selectedId !== null) return;
-    const isCorrect = word.id === session.question.prompt.id;
-    onAnswer(session.question.prompt.id, isCorrect);
     setSession({
       ...session,
       selectedId: word.id,
-      correct: session.correct + (isCorrect ? 1 : 0),
-      incorrect: session.incorrect + (isCorrect ? 0 : 1),
+    });
+  }
+
+  function rateAnswer(rating: SrsRating) {
+    if (!session || session.selectedId === null || session.rating !== null) return;
+    onAnswer(session.question.prompt.id, rating);
+    setSession({
+      ...session,
+      rating,
+      ratings: { ...session.ratings, [rating]: session.ratings[rating] + 1 },
     });
   }
 
@@ -78,7 +93,7 @@ export function MultipleChoicePractice({
     if (!session) return;
     const nextQueue = session.queue.slice(1);
     if (nextQueue.length === 0) {
-      setLastResult({ correct: session.correct, total: session.total });
+      setLastResult({ total: session.total, ratings: session.ratings });
       setSession(null);
       return;
     }
@@ -87,6 +102,7 @@ export function MultipleChoicePractice({
       queue: nextQueue,
       question: buildQuestion(nextQueue[0], words),
       selectedId: null,
+      rating: null,
     });
   }
 
@@ -122,9 +138,12 @@ export function MultipleChoicePractice({
         </div>
 
         {lastResult && (
-          <p className="help-text">
-            Сессия завершена: {lastResult.correct} из {lastResult.total} правильно.
-          </p>
+          <div className="result-card">
+            <p>Сессия завершена: {lastResult.total} слов.</p>
+            <p className="help-text">
+              Again {lastResult.ratings.again} · Hard {lastResult.ratings.hard} · Good {lastResult.ratings.good} · Easy {lastResult.ratings.easy}
+            </p>
+          </div>
         )}
 
         {dueWords.length > 0 ? (
@@ -139,11 +158,13 @@ export function MultipleChoicePractice({
             </button>
           </>
         )}
+
+        <ReviewHistory words={words} />
       </section>
     );
   }
 
-  const { question, selectedId, queue, total } = session;
+  const { question, selectedId, rating, queue, total } = session;
   const promptText = direction === "toTranslation" ? question.prompt.text : question.prompt.translation;
   const promptDir = direction === "toTranslation" ? config.dir : "auto";
   const progress = total - queue.length + 1;
@@ -185,10 +206,57 @@ export function MultipleChoicePractice({
       </ul>
 
       {selectedId !== null && (
-        <button type="button" onClick={advance}>
-          Следующее слово
-        </button>
+        <>
+          <div className="rating-grid" aria-label="Оценка ответа">
+            {RATING_ORDER.map((value) => {
+              const nextInterval = reviewSrsState(question.prompt, value).srsInterval;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  className={`rating-button rating-${value}${rating === value ? " rating-selected" : ""}`}
+                  disabled={rating !== null}
+                  onClick={() => rateAnswer(value)}
+                >
+                  <span>{RATING_LABELS[value]}</span>
+                  <small>{nextInterval} дн.</small>
+                </button>
+              );
+            })}
+          </div>
+          {rating !== null && (
+            <button type="button" onClick={advance}>
+              Следующее слово
+            </button>
+          )}
+        </>
       )}
     </section>
+  );
+}
+
+function ReviewHistory({ words }: { words: Word[] }) {
+  const recent = words
+    .flatMap((word) => word.srsHistory.map((review) => ({ word, review })))
+    .sort((a, b) => b.review.reviewedAt.localeCompare(a.review.reviewedAt))
+    .slice(0, 10);
+
+  if (recent.length === 0) return null;
+
+  return (
+    <details className="review-history">
+      <summary>История повторений</summary>
+      <ul>
+        {recent.map(({ word, review }) => (
+          <li key={`${word.id}-${review.reviewedAt}`}>
+            <span dir="auto">{word.text}</span>
+            <span>{RATING_LABELS[review.rating]} · {review.nextInterval} дн.</span>
+            <time dateTime={review.reviewedAt}>
+              {new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(review.reviewedAt))}
+            </time>
+          </li>
+        ))}
+      </ul>
+    </details>
   );
 }

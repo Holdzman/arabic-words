@@ -1,4 +1,5 @@
 import type { Language } from "./languages";
+import type { SrsReview } from "./srs";
 
 export interface Word {
   id: string;
@@ -11,6 +12,7 @@ export interface Word {
   srsEase: number;
   srsDue: string;
   srsReps: number;
+  srsHistory: SrsReview[];
 }
 
 export interface GeneratedSentence {
