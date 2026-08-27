@@ -245,6 +245,22 @@ label {
   border-radius: var(--radius-pill);
 }
 
+.practice-mode-toggle {
+  flex-wrap: wrap;
+  border-radius: var(--radius-md);
+}
+
+.listening-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.listen-button {
+  min-height: 52px;
+  font-size: var(--fs-word);
+}
+
 .candidate-picker {
   display: flex;
   flex-direction: column;

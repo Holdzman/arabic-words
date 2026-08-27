@@ -7,8 +7,9 @@ import type { SrsRating } from "@/lib/srs";
 import { WordExamplePractice } from "./WordExamplePractice";
 import { TranslationQuizPractice } from "./TranslationQuizPractice";
 import { MultipleChoicePractice } from "./MultipleChoicePractice";
+import { ListeningPractice } from "./ListeningPractice";
 
-type Mode = "word" | "translate" | "quiz";
+type Mode = "word" | "translate" | "listen" | "quiz";
 
 export function Practice({
   words,
@@ -31,7 +32,7 @@ export function Practice({
 
   return (
     <section>
-      <div className="mode-toggle">
+      <div className="mode-toggle practice-mode-toggle">
         <button
           type="button"
           className={mode === "word" ? "pill pill-active" : "pill"}
@@ -45,6 +46,13 @@ export function Practice({
           onClick={() => setMode("translate")}
         >
           Перевод
+        </button>
+        <button
+          type="button"
+          className={mode === "listen" ? "pill pill-active" : "pill"}
+          onClick={() => setMode("listen")}
+        >
+          Аудирование
         </button>
         <button
           type="button"
@@ -66,6 +74,9 @@ export function Practice({
       )}
       {mode === "translate" && (
         <TranslationQuizPractice key={language} words={words} language={language} onOpenSettings={onOpenSettings} />
+      )}
+      {mode === "listen" && (
+        <ListeningPractice key={language} words={words} language={language} onOpenSettings={onOpenSettings} />
       )}
       {mode === "quiz" && (
         <MultipleChoicePractice key={language} words={words} language={language} onAnswer={onAnswer} />
