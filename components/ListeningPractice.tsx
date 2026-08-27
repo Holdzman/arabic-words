@@ -11,6 +11,17 @@ const SPEECH_LANGUAGE: Record<Language, string> = {
   en: "en-US",
 };
 
+function voiceId(voice: SpeechSynthesisVoice): string {
+  return voice.voiceURI || `${voice.name}-${voice.lang}`;
+}
+
+function voiceQualityScore(voice: SpeechSynthesisVoice): number {
+  const name = voice.name.toLowerCase();
+  if (/premium|enhanced|neural|natural|siri/.test(name)) return 3;
+  if (!voice.localService) return 2;
+  return 1;
+}
+
 export function ListeningPractice({
   words,
   language,
@@ -28,6 +39,8 @@ export function ListeningPractice({
   const [rate, setRate] = useState(1);
   const [hasPlayed, setHasPlayed] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceId, setSelectedVoiceId] = useState("");
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const replayTimerRef = useRef<number | null>(null);
   const speechSupported = typeof window !== "undefined" && "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
@@ -35,12 +48,32 @@ export function ListeningPractice({
   const [showSettingsAction, setShowSettingsAction] = useState(false);
 
   useEffect(() => {
+    function loadVoices() {
+      const matching = window.speechSynthesis
+        .getVoices()
+        .filter((voice) => voice.lang.toLowerCase().startsWith(language))
+        .sort((a, b) => voiceQualityScore(b) - voiceQualityScore(a) || a.name.localeCompare(b.name));
+      setVoices(matching);
+      const saved = window.localStorage.getItem(`listening-voice-${language}`);
+      const preferred = matching.find((voice) => voiceId(voice) === saved) ?? matching[0];
+      setSelectedVoiceId(preferred ? voiceId(preferred) : "");
+    }
+
+    const initialLoad = window.setTimeout(loadVoices, 0);
+    window.speechSynthesis?.addEventListener("voiceschanged", loadVoices);
     return () => {
+      window.clearTimeout(initialLoad);
+      window.speechSynthesis?.removeEventListener("voiceschanged", loadVoices);
       if (replayTimerRef.current !== null) window.clearTimeout(replayTimerRef.current);
       window.speechSynthesis?.cancel();
       utteranceRef.current = null;
     };
-  }, []);
+  }, [language]);
+
+  function selectVoice(id: string) {
+    setSelectedVoiceId(id);
+    window.localStorage.setItem(`listening-voice-${language}`, id);
+  }
 
   async function handleGenerate() {
     window.speechSynthesis?.cancel();
@@ -80,9 +113,7 @@ export function ListeningPractice({
       const utterance = new SpeechSynthesisUtterance(result.answer);
       utterance.lang = SPEECH_LANGUAGE[language];
       utterance.rate = rate;
-      const matchingVoice = window.speechSynthesis
-        .getVoices()
-        .find((voice) => voice.lang.toLowerCase().startsWith(language));
+      const matchingVoice = voices.find((voice) => voiceId(voice) === selectedVoiceId) ?? voices[0];
       if (matchingVoice) utterance.voice = matchingVoice;
       utterance.onstart = () => {
         setHasPlayed(true);
@@ -125,6 +156,22 @@ export function ListeningPractice({
               <button type="button" className="listen-button" onClick={speak}>
                 {isSpeaking ? "↻ Начать сначала" : hasPlayed ? "↻ Прослушать ещё раз" : "▶ Прослушать"}
               </button>
+              {voices.length > 0 && (
+                <div>
+                  <label htmlFor="listening-voice">Рассказчик</label>
+                  <select
+                    id="listening-voice"
+                    value={selectedVoiceId}
+                    onChange={(event) => selectVoice(event.target.value)}
+                  >
+                    {voices.map((voice) => (
+                      <option key={voiceId(voice)} value={voiceId(voice)}>
+                        {voice.name} ({voice.lang})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="mode-toggle" aria-label="Скорость воспроизведения">
                 <button
                   type="button"
