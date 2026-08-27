@@ -161,14 +161,16 @@ label {
 .app-shell {
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  height: 100dvh;
   max-width: 480px;
   margin: 0 auto;
+  overflow: hidden;
 }
 
 .app-header {
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
   gap: var(--space-3);
   padding: var(--space-5) var(--space-4) var(--space-3);
 }
@@ -182,8 +184,11 @@ label {
 
 .app-main {
   flex: 1;
+  min-height: 0;
   padding: var(--space-2) var(--space-4) var(--space-4);
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .app-main section {
@@ -194,6 +199,9 @@ label {
 
 .tab-bar {
   display: flex;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
   border-top: 1px solid var(--color-border);
   background: var(--color-surface);
   padding-bottom: env(safe-area-inset-bottom);
