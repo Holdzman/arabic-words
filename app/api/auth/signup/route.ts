@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { SignupRequestBody, Word } from "@/lib/types";
+import { initialSrsState } from "@/lib/srs";
 import { authErrorResponse } from "@/lib/server/authErrorResponse";
 import { hashPassword } from "@/lib/server/password";
 import { createUser, findUserByUsername } from "@/lib/server/users";
@@ -23,14 +24,16 @@ function sanitizeImportWords(input: unknown): Word[] | null {
       return null;
     }
     const language = (item as Word).language;
+    const dateAdded =
+      typeof (item as Word).dateAdded === "string" ? (item as Word).dateAdded : new Date().toISOString();
     sanitized.push({
       id: typeof (item as Word).id === "string" ? (item as Word).id : randomUUID(),
       text: (item as Word).text,
       translation: (item as Word).translation,
       isLearned: Boolean((item as Word).isLearned),
-      dateAdded:
-        typeof (item as Word).dateAdded === "string" ? (item as Word).dateAdded : new Date().toISOString(),
+      dateAdded,
       language: language === "it" || language === "en" ? language : "ar",
+      ...initialSrsState(new Date(dateAdded)),
     });
   }
   return sanitized;

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Word } from "@/lib/types";
 import { languageConfig, type Language } from "@/lib/languages";
+import { isDue } from "@/lib/srs";
 
 type Direction = "toTranslation" | "toWord";
 
@@ -15,34 +16,45 @@ function shuffle<T>(items: T[]): T[] {
   return [...items].sort(() => Math.random() - 0.5);
 }
 
-function buildQuestion(words: Word[]): Question | null {
+function buildQuestion(words: Word[], now: Date): Question | null {
   if (words.length < 4) return null;
-  const shuffled = shuffle(words);
-  const prompt = shuffled[0];
-  const options = shuffle(shuffled.slice(0, 4));
+  const due = words.filter((w) => isDue(w, now));
+  const promptPool = due.length > 0 ? due : words;
+  const prompt = promptPool[Math.floor(Math.random() * promptPool.length)];
+  const distractors = shuffle(words.filter((w) => w.id !== prompt.id)).slice(0, 3);
+  const options = shuffle([prompt, ...distractors]);
   return { prompt, options };
 }
 
-export function MultipleChoicePractice({ words, language }: { words: Word[]; language: Language }) {
+export function MultipleChoicePractice({
+  words,
+  language,
+  onAnswer,
+}: {
+  words: Word[];
+  language: Language;
+  onAnswer: (id: string, correct: boolean) => void;
+}) {
   const config = languageConfig(language);
   const [direction, setDirection] = useState<Direction>("toTranslation");
-  const [question, setQuestion] = useState<Question | null>(() => buildQuestion(words));
+  const [question, setQuestion] = useState<Question | null>(() => buildQuestion(words, new Date()));
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   function nextQuestion() {
-    setQuestion(buildQuestion(words));
+    setQuestion(buildQuestion(words, new Date()));
     setSelectedId(null);
   }
 
   function changeDirection(next: Direction) {
     setDirection(next);
-    setQuestion(buildQuestion(words));
+    setQuestion(buildQuestion(words, new Date()));
     setSelectedId(null);
   }
 
   function pickOption(word: Word) {
-    if (selectedId !== null) return;
+    if (selectedId !== null || !question) return;
     setSelectedId(word.id);
+    onAnswer(question.prompt.id, word.id === question.prompt.id);
   }
 
   if (words.length < 4) {
@@ -55,6 +67,7 @@ export function MultipleChoicePractice({ words, language }: { words: Word[]; lan
     );
   }
 
+  const dueCount = words.filter((w) => isDue(w)).length;
   const promptText = question && (direction === "toTranslation" ? question.prompt.text : question.prompt.translation);
   const promptDir = direction === "toTranslation" ? config.dir : "auto";
 
@@ -76,6 +89,10 @@ export function MultipleChoicePractice({ words, language }: { words: Word[]; lan
           Перевод → слово
         </button>
       </div>
+
+      <p className="help-text">
+        К повторению сегодня: {dueCount} из {words.length}.
+      </p>
 
       {question && (
         <>

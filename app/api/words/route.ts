@@ -18,7 +18,11 @@ function isValidWords(input: unknown): input is Word[] {
       typeof (item as Word).translation === "string" &&
       typeof (item as Word).isLearned === "boolean" &&
       typeof (item as Word).dateAdded === "string" &&
-      ((item as Word).language === undefined || VALID_LANGUAGES.has((item as Word).language))
+      ((item as Word).language === undefined || VALID_LANGUAGES.has((item as Word).language)) &&
+      ((item as Word).srsInterval === undefined || typeof (item as Word).srsInterval === "number") &&
+      ((item as Word).srsEase === undefined || typeof (item as Word).srsEase === "number") &&
+      ((item as Word).srsReps === undefined || typeof (item as Word).srsReps === "number") &&
+      ((item as Word).srsDue === undefined || typeof (item as Word).srsDue === "string")
   );
 }
 

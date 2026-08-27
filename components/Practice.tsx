@@ -13,11 +13,13 @@ export function Practice({
   words,
   language,
   onMarkLearned,
+  onAnswer,
   onOpenSettings,
 }: {
   words: Word[];
   language: Language;
   onMarkLearned: (id: string) => void;
+  onAnswer: (id: string, correct: boolean) => void;
   onOpenSettings: () => void;
 }) {
   const [mode, setMode] = useState<Mode>("word");
@@ -64,7 +66,9 @@ export function Practice({
       {mode === "translate" && (
         <TranslationQuizPractice key={language} words={words} language={language} onOpenSettings={onOpenSettings} />
       )}
-      {mode === "quiz" && <MultipleChoicePractice key={language} words={words} language={language} />}
+      {mode === "quiz" && (
+        <MultipleChoicePractice key={language} words={words} language={language} onAnswer={onAnswer} />
+      )}
     </section>
   );
 }

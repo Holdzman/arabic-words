@@ -7,6 +7,10 @@ export interface Word {
   isLearned: boolean;
   dateAdded: string;
   language: Language;
+  srsInterval: number;
+  srsEase: number;
+  srsDue: string;
+  srsReps: number;
 }
 
 export interface GeneratedSentence {

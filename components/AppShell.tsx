@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Word } from "@/lib/types";
 import { LANGUAGES, type Language } from "@/lib/languages";
+import { initialSrsState, reviewSrsState } from "@/lib/srs";
 import * as account from "@/lib/account";
 import * as wordsApi from "@/lib/wordsApi";
 import { TabBar, type AppTab } from "./TabBar";
@@ -14,7 +15,14 @@ import { AuthGate } from "./AuthGate";
 type AuthStatus = "loading" | "anon" | "authed";
 
 function normalizeWords(words: Word[]): Word[] {
-  return words.map((w) => ({ ...w, language: w.language ?? "ar" }));
+  return words.map((w) => ({
+    ...w,
+    language: w.language ?? "ar",
+    srsInterval: w.srsInterval ?? 0,
+    srsEase: w.srsEase ?? 2.5,
+    srsReps: w.srsReps ?? 0,
+    srsDue: w.srsDue ?? w.dateAdded,
+  }));
 }
 
 export function AppShell() {
@@ -92,6 +100,7 @@ export function AppShell() {
         isLearned: false,
         dateAdded: new Date().toISOString(),
         language: activeLanguage,
+        ...initialSrsState(),
       },
       ...words,
     ]);
@@ -113,6 +122,7 @@ export function AppShell() {
         isLearned: false,
         dateAdded: new Date().toISOString(),
         language: activeLanguage,
+        ...initialSrsState(),
       });
     }
     if (toAdd.length > 0) {
@@ -123,6 +133,10 @@ export function AppShell() {
 
   function handleToggleLearned(id: string) {
     persist(words.map((w) => (w.id === id ? { ...w, isLearned: !w.isLearned } : w)));
+  }
+
+  function handleSrsAnswer(id: string, correct: boolean) {
+    persist(words.map((w) => (w.id === id ? { ...w, ...reviewSrsState(w, correct) } : w)));
   }
 
   function handleDelete(id: string) {
@@ -183,6 +197,7 @@ export function AppShell() {
             words={languageWords}
             language={activeLanguage}
             onMarkLearned={handleToggleLearned}
+            onAnswer={handleSrsAnswer}
             onOpenSettings={() => setActiveTab("settings")}
           />
         )}
