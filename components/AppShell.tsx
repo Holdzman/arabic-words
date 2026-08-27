@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Word } from "@/lib/types";
 import { LANGUAGES, type Language } from "@/lib/languages";
-import { initialSrsState, reviewSrsState } from "@/lib/srs";
+import { createSrsReview, initialSrsState, reviewSrsState, type SrsRating } from "@/lib/srs";
 import * as account from "@/lib/account";
 import * as wordsApi from "@/lib/wordsApi";
 import { TabBar, type AppTab } from "./TabBar";
@@ -22,6 +22,7 @@ function normalizeWords(words: Word[]): Word[] {
     srsEase: w.srsEase ?? 2.5,
     srsReps: w.srsReps ?? 0,
     srsDue: w.srsDue ?? w.dateAdded,
+    srsHistory: Array.isArray(w.srsHistory) ? w.srsHistory : [],
   }));
 }
 
@@ -101,6 +102,7 @@ export function AppShell() {
         dateAdded: new Date().toISOString(),
         language: activeLanguage,
         ...initialSrsState(),
+        srsHistory: [],
       },
       ...words,
     ]);
@@ -123,6 +125,7 @@ export function AppShell() {
         dateAdded: new Date().toISOString(),
         language: activeLanguage,
         ...initialSrsState(),
+        srsHistory: [],
       });
     }
     if (toAdd.length > 0) {
@@ -135,8 +138,17 @@ export function AppShell() {
     persist(words.map((w) => (w.id === id ? { ...w, isLearned: !w.isLearned } : w)));
   }
 
-  function handleSrsAnswer(id: string, correct: boolean) {
-    persist(words.map((w) => (w.id === id ? { ...w, ...reviewSrsState(w, correct) } : w)));
+  function handleSrsAnswer(id: string, rating: SrsRating) {
+    const now = new Date();
+    persist(words.map((w) => {
+      if (w.id !== id) return w;
+      const next = reviewSrsState(w, rating, now);
+      return {
+        ...w,
+        ...next,
+        srsHistory: [...w.srsHistory, createSrsReview(w, next, rating, now)],
+      };
+    }));
   }
 
   function handleDelete(id: string) {

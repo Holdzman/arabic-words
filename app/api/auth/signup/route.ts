@@ -34,6 +34,7 @@ function sanitizeImportWords(input: unknown): Word[] | null {
       dateAdded,
       language: language === "it" || language === "en" ? language : "ar",
       ...initialSrsState(new Date(dateAdded)),
+      srsHistory: [],
     });
   }
   return sanitized;

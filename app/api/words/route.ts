@@ -6,6 +6,21 @@ import { findUserById, updateWords } from "@/lib/server/users";
 const MAX_WORDS = 5000;
 
 const VALID_LANGUAGES = new Set(["ar", "it", "en"]);
+const VALID_RATINGS = new Set(["again", "hard", "good", "easy"]);
+
+function isValidHistory(input: unknown): boolean {
+  if (input === undefined) return true;
+  if (!Array.isArray(input) || input.length > 10000) return false;
+  return input.every((entry) =>
+    entry && typeof entry === "object" &&
+    typeof entry.reviewedAt === "string" &&
+    VALID_RATINGS.has(entry.rating) &&
+    typeof entry.previousInterval === "number" &&
+    typeof entry.nextInterval === "number" &&
+    typeof entry.previousDue === "string" &&
+    typeof entry.nextDue === "string"
+  );
+}
 
 function isValidWords(input: unknown): input is Word[] {
   if (!Array.isArray(input) || input.length > MAX_WORDS) return false;
@@ -22,7 +37,8 @@ function isValidWords(input: unknown): input is Word[] {
       ((item as Word).srsInterval === undefined || typeof (item as Word).srsInterval === "number") &&
       ((item as Word).srsEase === undefined || typeof (item as Word).srsEase === "number") &&
       ((item as Word).srsReps === undefined || typeof (item as Word).srsReps === "number") &&
-      ((item as Word).srsDue === undefined || typeof (item as Word).srsDue === "string")
+      ((item as Word).srsDue === undefined || typeof (item as Word).srsDue === "string") &&
+      isValidHistory((item as Word).srsHistory)
   );
 }
 
