@@ -11,6 +11,13 @@ const SPEECH_LANGUAGE: Record<Language, string> = {
   en: "en-US",
 };
 
+const CLOUD_VOICES = [
+  { id: "cloud:marin", name: "Marin — естественный" },
+  { id: "cloud:cedar", name: "Cedar — естественный" },
+  { id: "cloud:coral", name: "Coral — мягкий" },
+  { id: "cloud:onyx", name: "Onyx — низкий" },
+];
+
 function voiceId(voice: SpeechSynthesisVoice): string {
   return voice.voiceURI || `${voice.name}-${voice.lang}`;
 }
@@ -40,8 +47,12 @@ export function ListeningPractice({
   const [hasPlayed, setHasPlayed] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedVoiceId, setSelectedVoiceId] = useState("");
+  const [selectedVoiceId, setSelectedVoiceId] = useState(language === "ar" ? "cloud:marin" : "");
+  const [cloudAudio, setCloudAudio] = useState<{ key: string; url: string } | null>(null);
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const cloudAudioRef = useRef<{ key: string; url: string } | null>(null);
   const replayTimerRef = useRef<number | null>(null);
   const speechSupported = typeof window !== "undefined" && "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -55,8 +66,9 @@ export function ListeningPractice({
         .sort((a, b) => voiceQualityScore(b) - voiceQualityScore(a) || a.name.localeCompare(b.name));
       setVoices(matching);
       const saved = window.localStorage.getItem(`listening-voice-${language}`);
+      const savedCloudVoice = language === "ar" && CLOUD_VOICES.some((voice) => voice.id === saved) ? saved : null;
       const preferred = matching.find((voice) => voiceId(voice) === saved) ?? matching[0];
-      setSelectedVoiceId(preferred ? voiceId(preferred) : "");
+      setSelectedVoiceId(savedCloudVoice ?? (preferred ? voiceId(preferred) : language === "ar" ? "cloud:marin" : ""));
     }
 
     const initialLoad = window.setTimeout(loadVoices, 0);
@@ -66,6 +78,8 @@ export function ListeningPractice({
       window.speechSynthesis?.removeEventListener("voiceschanged", loadVoices);
       if (replayTimerRef.current !== null) window.clearTimeout(replayTimerRef.current);
       window.speechSynthesis?.cancel();
+      audioRef.current?.pause();
+      if (cloudAudioRef.current) URL.revokeObjectURL(cloudAudioRef.current.url);
       utteranceRef.current = null;
     };
   }, [language]);
@@ -73,6 +87,33 @@ export function ListeningPractice({
   function selectVoice(id: string) {
     setSelectedVoiceId(id);
     window.localStorage.setItem(`listening-voice-${language}`, id);
+    if (result && id.startsWith("cloud:")) void loadCloudAudio(result.answer, id);
+  }
+
+  async function loadCloudAudio(text: string, voiceIdValue: string) {
+    const key = `${voiceIdValue}:${text}`;
+    if (cloudAudio?.key === key) return;
+    setIsAudioLoading(true);
+    setErrorText(null);
+    try {
+      const response = await fetch("/api/speech", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ input: text, voice: voiceIdValue.replace("cloud:", "") }),
+      });
+      if (!response.ok) throw new Error("speech request failed");
+      const url = URL.createObjectURL(await response.blob());
+      setCloudAudio((previous) => {
+        if (previous) URL.revokeObjectURL(previous.url);
+        const next = { key, url };
+        cloudAudioRef.current = next;
+        return next;
+      });
+    } catch {
+      setErrorText("Не удалось создать облачную озвучку. Можно выбрать системный голос и попробовать снова.");
+    } finally {
+      setIsAudioLoading(false);
+    }
   }
 
   async function handleGenerate() {
@@ -87,7 +128,10 @@ export function ListeningPractice({
     setIsSpeaking(false);
 
     try {
-      setResult(await generateTranslationQuiz(language, words));
+      const quiz = await generateTranslationQuiz(language, words);
+      setResult(quiz);
+      const voice = selectedVoiceId || (language === "ar" ? "cloud:marin" : "");
+      if (voice.startsWith("cloud:")) await loadCloudAudio(quiz.answer, voice);
     } catch (err) {
       if (err instanceof GenerationError) {
         setErrorText(err.message);
@@ -101,7 +145,27 @@ export function ListeningPractice({
   }
 
   function speak() {
-    if (!result || !speechSupported) return;
+    if (!result) return;
+    if (selectedVoiceId.startsWith("cloud:")) {
+      const key = `${selectedVoiceId}:${result.answer}`;
+      if (cloudAudio?.key !== key) {
+        void loadCloudAudio(result.answer, selectedVoiceId);
+        return;
+      }
+      audioRef.current?.pause();
+      const audio = new Audio(cloudAudio.url);
+      audio.playbackRate = rate;
+      audio.onplay = () => {
+        setHasPlayed(true);
+        setIsSpeaking(true);
+      };
+      audio.onended = () => setIsSpeaking(false);
+      audio.onerror = () => setIsSpeaking(false);
+      audioRef.current = audio;
+      void audio.play();
+      return;
+    }
+    if (!speechSupported) return;
     if (replayTimerRef.current !== null) window.clearTimeout(replayTimerRef.current);
     window.speechSynthesis.cancel();
     setIsSpeaking(false);
@@ -151,12 +215,12 @@ export function ListeningPractice({
 
       {result && (
         <div className="listening-card">
-          {speechSupported ? (
+          {speechSupported || language === "ar" ? (
             <>
-              <button type="button" className="listen-button" onClick={speak}>
-                {isSpeaking ? "↻ Начать сначала" : hasPlayed ? "↻ Прослушать ещё раз" : "▶ Прослушать"}
+              <button type="button" className="listen-button" onClick={speak} disabled={isAudioLoading}>
+                {isAudioLoading ? "Готовлю голос…" : isSpeaking ? "↻ Начать сначала" : hasPlayed ? "↻ Прослушать ещё раз" : "▶ Прослушать"}
               </button>
-              {voices.length > 0 && (
+              {(voices.length > 0 || language === "ar") && (
                 <div>
                   <label htmlFor="listening-voice">Рассказчик</label>
                   <select
@@ -164,12 +228,24 @@ export function ListeningPractice({
                     value={selectedVoiceId}
                     onChange={(event) => selectVoice(event.target.value)}
                   >
+                    {language === "ar" && (
+                      <optgroup label="Облачные голоса — OpenAI">
+                        {CLOUD_VOICES.map((voice) => (
+                          <option key={voice.id} value={voice.id}>{voice.name}</option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {voices.length > 0 && <optgroup label="Системные голоса">
                     {voices.map((voice) => (
                       <option key={voiceId(voice)} value={voiceId(voice)}>
                         {voice.name} ({voice.lang})
                       </option>
                     ))}
+                    </optgroup>}
                   </select>
+                  {selectedVoiceId.startsWith("cloud:") && (
+                    <p className="help-text">Голос создан искусственным интеллектом OpenAI.</p>
+                  )}
                 </div>
               )}
               <div className="mode-toggle" aria-label="Скорость воспроизведения">
