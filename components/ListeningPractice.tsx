@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { TranslationQuizResponse, Word } from "@/lib/types";
 import { generateTranslationQuiz, GenerationError } from "@/lib/anthropicClient";
 import { languageConfig, type Language } from "@/lib/languages";
@@ -26,12 +26,20 @@ export function ListeningPractice({
   const [userAnswer, setUserAnswer] = useState("");
   const [revealed, setRevealed] = useState(false);
   const [rate, setRate] = useState(1);
+  const [hasPlayed, setHasPlayed] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const replayTimerRef = useRef<number | null>(null);
   const speechSupported = typeof window !== "undefined" && "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
   const [errorText, setErrorText] = useState<string | null>(null);
   const [showSettingsAction, setShowSettingsAction] = useState(false);
 
   useEffect(() => {
-    return () => window.speechSynthesis?.cancel();
+    return () => {
+      if (replayTimerRef.current !== null) window.clearTimeout(replayTimerRef.current);
+      window.speechSynthesis?.cancel();
+      utteranceRef.current = null;
+    };
   }, []);
 
   async function handleGenerate() {
@@ -42,6 +50,8 @@ export function ListeningPractice({
     setResult(null);
     setUserAnswer("");
     setRevealed(false);
+    setHasPlayed(false);
+    setIsSpeaking(false);
 
     try {
       setResult(await generateTranslationQuiz(language, words));
@@ -59,15 +69,31 @@ export function ListeningPractice({
 
   function speak() {
     if (!result || !speechSupported) return;
+    if (replayTimerRef.current !== null) window.clearTimeout(replayTimerRef.current);
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(result.answer);
-    utterance.lang = SPEECH_LANGUAGE[language];
-    utterance.rate = rate;
-    const matchingVoice = window.speechSynthesis
-      .getVoices()
-      .find((voice) => voice.lang.toLowerCase().startsWith(language));
-    if (matchingVoice) utterance.voice = matchingVoice;
-    window.speechSynthesis.speak(utterance);
+    setIsSpeaking(false);
+
+    // Mobile Safari can truncate a replay when cancel() and speak() run in
+    // the same tick. Keeping the utterance alive and allowing the cancelled
+    // queue to settle makes repeated playback reliable.
+    replayTimerRef.current = window.setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(result.answer);
+      utterance.lang = SPEECH_LANGUAGE[language];
+      utterance.rate = rate;
+      const matchingVoice = window.speechSynthesis
+        .getVoices()
+        .find((voice) => voice.lang.toLowerCase().startsWith(language));
+      if (matchingVoice) utterance.voice = matchingVoice;
+      utterance.onstart = () => {
+        setHasPlayed(true);
+        setIsSpeaking(true);
+      };
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+      utteranceRef.current = utterance;
+      replayTimerRef.current = null;
+      window.speechSynthesis.speak(utterance);
+    }, 150);
   }
 
   return (
@@ -97,7 +123,7 @@ export function ListeningPractice({
           {speechSupported ? (
             <>
               <button type="button" className="listen-button" onClick={speak}>
-                ▶ Прослушать
+                {isSpeaking ? "↻ Начать сначала" : hasPlayed ? "↻ Прослушать ещё раз" : "▶ Прослушать"}
               </button>
               <div className="mode-toggle" aria-label="Скорость воспроизведения">
                 <button
