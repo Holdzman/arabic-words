@@ -204,34 +204,47 @@ label {
   flex-shrink: 0;
   position: relative;
   z-index: 10;
-  border-top: 1px solid var(--color-border);
-  background: var(--color-surface);
-  padding-bottom: env(safe-area-inset-bottom);
+  gap: 2px;
+  margin: var(--space-2) var(--space-3) calc(var(--space-2) + env(safe-area-inset-bottom));
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-muted);
+  box-shadow: var(--shadow-sm);
 }
 
 .tab-button {
   flex: 1;
-  background: none;
+  min-width: 0;
+  background: transparent;
   color: var(--color-text-secondary);
-  border-radius: 0;
-  padding: var(--space-4) var(--space-2);
+  border-radius: var(--radius-pill);
+  padding: 9px 5px;
   font-size: var(--fs-caption);
   font-weight: 500;
-  transition: color var(--duration-fast) ease;
+  white-space: nowrap;
+  transition:
+    color var(--duration-fast) ease,
+    background-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease,
+    transform var(--duration-fast) var(--ease-out);
 }
 
 .tab-button:hover {
-  background: none;
+  background: transparent;
   color: var(--color-text);
 }
 
 .tab-button:active {
-  transform: none;
+  transform: scale(0.97);
 }
 
-.tab-button-active {
-  color: var(--color-accent);
+.tab-button-active,
+.tab-button-active:hover {
+  background: var(--color-accent);
+  color: var(--color-accent-foreground);
   font-weight: 600;
+  box-shadow: 0 2px 6px oklch(35% 0.12 264 / 0.2);
 }
 
 .add-word-form {
@@ -960,6 +973,7 @@ label {
     z-index: auto;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
+    margin: 0;
     padding: var(--space-4);
     box-shadow: var(--shadow-sm);
   }
@@ -991,6 +1005,7 @@ label {
   .tab-button-active:hover {
     background: var(--color-accent-subtle);
     color: var(--color-accent);
+    box-shadow: none;
   }
 
   .word-row {
