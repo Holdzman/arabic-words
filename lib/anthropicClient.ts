@@ -79,7 +79,12 @@ export async function generateTranslationQuiz(
   try {
     return await postJson<TranslationQuizResponse>("/api/generate-translation-quiz", {
       language,
-      words: words.slice(0, TRANSLATION_QUIZ_WORD_CAP).map((w) => ({ text: w.text, translation: w.translation })),
+      words: words.slice(0, TRANSLATION_QUIZ_WORD_CAP).map((w) => ({
+        text: w.text,
+        translation: w.translation,
+        plural: w.plural,
+        partOfSpeech: w.partOfSpeech,
+      })),
     });
   } catch (err) {
     raiseGenerationError(err);

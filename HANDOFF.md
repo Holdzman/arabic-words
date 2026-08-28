@@ -43,6 +43,12 @@ Roadmap items #4–#10 (audio — now partly done via listening practice/TTS bel
 
 The “Сегодня” multiple-choice mode ranks distractors locally by similarity of the visible answer and the opposite side of the word card. It compares character bigrams, shared tokens, length, and initial letters; duplicate visible answers are avoided when the dictionary has enough alternatives. A small random tie-breaker keeps repeated sessions from always showing the same three choices. This does not call an AI service or add per-question cost. Implementation: `components/MultipleChoicePractice.tsx`.
 
+## Arabic plurals and inflected quiz forms
+
+- New Arabic noun candidates include a fully-voweled plural in optional `Word.plural`; the word list and add confirmation display `singular / plural`. Existing words remain compatible.
+- `Word.partOfSpeech` is also preserved from disambiguation so generated exercises have grammatical context.
+- Translation and listening exercises receive plural and part-of-speech metadata. Their prompt explicitly permits natural verb conjugation by person, number, gender, and tense, and singular/plural noun use instead of mechanically copying dictionary forms.
+
 ## Additional features completed after item #2
 
 ### Listening practice

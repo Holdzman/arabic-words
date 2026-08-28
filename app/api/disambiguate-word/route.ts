@@ -30,7 +30,9 @@ const ARABIC_SYSTEM_PROMPT =
   "на арабском), используй её, чтобы понять, какое значение он скорее всего имел в виду, и поставь этот вариант " +
   "первым, но всё равно верни другие правдоподобные варианты, если они существуют. Для каждого варианта дай: " +
   "слово на арабском с полными огласовками (ташкиль), точный перевод на русский язык, часть речи (например " +
-  "'существительное', 'глагол', 'прилагательное'). Если разумный вариант только один, верни ровно один. " +
+  "'существительное', 'глагол', 'прилагательное') и форму множественного числа. Для существительного укажи " +
+  "его наиболее употребительное множественное число на арабском с полными огласовками; для остальных частей " +
+  "речи верни пустую строку. Если разумный вариант только один, верни ровно один. " +
   "Максимум 4 варианта, отсортированных от наиболее вероятного к наименее вероятному.";
 
 function buildLookupSystemPrompt(language: Language): string {
@@ -99,8 +101,9 @@ export async function POST(request: Request) {
                   word: { type: "string" },
                   translation: { type: "string" },
                   note: { type: "string" },
+                  plural: { type: "string" },
                 },
-                required: ["word", "translation", "note"],
+                required: ["word", "translation", "note", "plural"],
                 additionalProperties: false,
               },
             },
@@ -167,7 +170,12 @@ export async function POST(request: Request) {
       return errorResponse(502, "malformed_response");
     }
     for (const c of parsed.candidates) {
-      if (typeof c.word !== "string" || typeof c.translation !== "string" || typeof c.note !== "string") {
+      if (
+        typeof c.word !== "string" ||
+        typeof c.translation !== "string" ||
+        typeof c.note !== "string" ||
+        typeof c.plural !== "string"
+      ) {
         return errorResponse(502, "malformed_response");
       }
     }
@@ -175,10 +183,11 @@ export async function POST(request: Request) {
     return Response.json({
       candidates: parsed.candidates
         .slice(0, cap)
-        .map((c: { word: string; translation: string; note: string }) => ({
+        .map((c: { word: string; translation: string; note: string; plural: string }) => ({
           text: c.word,
           translation: c.translation,
           partOfSpeech: c.note,
+          plural: language === "ar" && c.plural.trim() ? c.plural.trim() : undefined,
         })),
     });
   } catch {

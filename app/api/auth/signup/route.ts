@@ -30,6 +30,8 @@ function sanitizeImportWords(input: unknown): Word[] | null {
       id: typeof (item as Word).id === "string" ? (item as Word).id : randomUUID(),
       text: (item as Word).text,
       translation: (item as Word).translation,
+      plural: typeof (item as Word).plural === "string" ? (item as Word).plural : undefined,
+      partOfSpeech: typeof (item as Word).partOfSpeech === "string" ? (item as Word).partOfSpeech : undefined,
       isLearned: Boolean((item as Word).isLearned),
       dateAdded,
       language: language === "it" || language === "en" ? language : "ar",

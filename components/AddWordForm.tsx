@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { disambiguateWord, GenerationError } from "@/lib/anthropicClient";
-import type { DisambiguationCandidate } from "@/lib/types";
+import type { DisambiguationCandidate, NewWordData } from "@/lib/types";
 import { languageConfig, type Language } from "@/lib/languages";
 
 type Status = "idle" | "loading" | "picking" | "error";
@@ -11,7 +11,7 @@ export function AddWordForm({
   onAdd,
   language,
 }: {
-  onAdd: (text: string, translation: string) => void;
+  onAdd: (word: NewWordData) => void;
   language: Language;
 }) {
   const config = languageConfig(language);
@@ -50,14 +50,14 @@ export function AddWordForm({
   }
 
   function pickCandidate(candidate: DisambiguationCandidate) {
-    onAdd(candidate.text, candidate.translation);
+    onAdd(candidate);
     reset();
   }
 
   function addAsIs() {
     const trimmedText = text.trim();
     if (!trimmedText) return;
-    onAdd(trimmedText, "");
+    onAdd({ text: trimmedText, translation: "" });
     reset();
   }
 
@@ -102,7 +102,7 @@ export function AddWordForm({
               <li key={i} className="word-row">
                 <button type="button" className="candidate-option" onClick={() => pickCandidate(candidate)}>
                   <span dir={config.dir} className="word-arabic">
-                    {candidate.text}
+                    {candidate.text}{candidate.plural ? ` / ${candidate.plural}` : ""}
                   </span>
                   <span className="word-translation">
                     {candidate.translation}

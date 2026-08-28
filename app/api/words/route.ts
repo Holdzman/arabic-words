@@ -31,6 +31,8 @@ function isValidWords(input: unknown): input is Word[] {
       typeof (item as Word).id === "string" &&
       typeof (item as Word).text === "string" &&
       typeof (item as Word).translation === "string" &&
+      ((item as Word).plural === undefined || typeof (item as Word).plural === "string") &&
+      ((item as Word).partOfSpeech === undefined || typeof (item as Word).partOfSpeech === "string") &&
       typeof (item as Word).isLearned === "boolean" &&
       typeof (item as Word).dateAdded === "string" &&
       ((item as Word).language === undefined || VALID_LANGUAGES.has((item as Word).language)) &&

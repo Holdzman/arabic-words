@@ -5,6 +5,8 @@ export interface Word {
   id: string;
   text: string;
   translation: string;
+  plural?: string;
+  partOfSpeech?: string;
   isLearned: boolean;
   dateAdded: string;
   language: Language;
@@ -13,6 +15,13 @@ export interface Word {
   srsDue: string;
   srsReps: number;
   srsHistory: SrsReview[];
+}
+
+export interface NewWordData {
+  text: string;
+  translation: string;
+  plural?: string;
+  partOfSpeech?: string;
 }
 
 export interface GeneratedSentence {
@@ -50,6 +59,7 @@ export interface DisambiguationCandidate {
   text: string;
   translation: string;
   partOfSpeech: string;
+  plural?: string;
 }
 
 export interface DisambiguateWordRequestBody {
@@ -69,7 +79,7 @@ export interface TranslationQuizResponse {
 
 export interface GenerateTranslationQuizRequestBody {
   language: Language;
-  words: { text: string; translation: string }[];
+  words: NewWordData[];
 }
 
 // --- Accounts ---
