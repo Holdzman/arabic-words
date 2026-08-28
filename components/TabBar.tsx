@@ -19,8 +19,10 @@ export function TabBar({
       {TABS.map((tab) => (
         <button
           key={tab.id}
+          type="button"
           className={tab.id === active ? "tab-button tab-button-active" : "tab-button"}
           onClick={() => onChange(tab.id)}
+          aria-current={tab.id === active ? "page" : undefined}
         >
           {tab.label}
         </button>
