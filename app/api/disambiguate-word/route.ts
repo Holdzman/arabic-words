@@ -6,7 +6,7 @@ import { resolveSessionApiKey } from "@/lib/server/resolveApiKey";
 const ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
 const MODEL = "claude-haiku-4-5";
-const MAX_TOKENS = 500;
+const MAX_TOKENS = 900;
 const TIMEOUT_MS = 25_000;
 
 const LANGUAGE_NAMES: Record<Language, { genitive: string; locative: string }> = {
@@ -32,7 +32,13 @@ const ARABIC_SYSTEM_PROMPT =
   "слово на арабском с полными огласовками (ташкиль), точный перевод на русский язык, часть речи (например " +
   "'существительное', 'глагол', 'прилагательное') и форму множественного числа. Для существительного укажи " +
   "его наиболее употребительное множественное число на арабском с полными огласовками; для остальных частей " +
-  "речи верни пустую строку. Если разумный вариант только один, верни ровно один. " +
+  "речи верни пустую строку. Дополнительно для каждого варианта укажи: корень слова (обычно 3-4 согласные буквы " +
+  "через пробел, например 'ك ت ب'; если у слова нет ясного корня — частица, заимствование и т.п. — верни пустую " +
+  "строку); для существительного и прилагательного — грамматический род ('m' для мужского, 'f' для женского, " +
+  "иначе пустую строку); дополнительно только для прилагательного — форму женского рода на арабском с полными " +
+  "огласовками, если она отличается от формы мужского рода (иначе пустую строку); только для глагола — форму " +
+  "настоящего-будущего времени (المضارع) 3-го лица мужского рода единственного числа с полными огласовками, " +
+  "например 'يَكْتُبُ' для 'كَتَبَ' (иначе пустую строку). Если разумный вариант только один, верни ровно один. " +
   "Максимум 4 варианта, отсортированных от наиболее вероятного к наименее вероятному.";
 
 function buildLookupSystemPrompt(language: Language): string {
@@ -102,8 +108,12 @@ export async function POST(request: Request) {
                   translation: { type: "string" },
                   note: { type: "string" },
                   plural: { type: "string" },
+                  root: { type: "string" },
+                  gender: { type: "string" },
+                  feminineForm: { type: "string" },
+                  presentTense: { type: "string" },
                 },
-                required: ["word", "translation", "note", "plural"],
+                required: ["word", "translation", "note", "plural", "root", "gender", "feminineForm", "presentTense"],
                 additionalProperties: false,
               },
             },
@@ -174,21 +184,38 @@ export async function POST(request: Request) {
         typeof c.word !== "string" ||
         typeof c.translation !== "string" ||
         typeof c.note !== "string" ||
-        typeof c.plural !== "string"
+        typeof c.plural !== "string" ||
+        typeof c.root !== "string" ||
+        typeof c.gender !== "string" ||
+        typeof c.feminineForm !== "string" ||
+        typeof c.presentTense !== "string"
       ) {
         return errorResponse(502, "malformed_response");
       }
     }
     const cap = language === "ar" ? 4 : 2;
     return Response.json({
-      candidates: parsed.candidates
-        .slice(0, cap)
-        .map((c: { word: string; translation: string; note: string; plural: string }) => ({
+      candidates: parsed.candidates.slice(0, cap).map(
+        (c: {
+          word: string;
+          translation: string;
+          note: string;
+          plural: string;
+          root: string;
+          gender: string;
+          feminineForm: string;
+          presentTense: string;
+        }) => ({
           text: c.word,
           translation: c.translation,
           partOfSpeech: c.note,
           plural: language === "ar" && c.plural.trim() ? c.plural.trim() : undefined,
-        })),
+          root: language === "ar" && c.root.trim() ? c.root.trim() : undefined,
+          gender: language === "ar" && (c.gender.trim() === "m" || c.gender.trim() === "f") ? c.gender.trim() : undefined,
+          feminineForm: language === "ar" && c.feminineForm.trim() ? c.feminineForm.trim() : undefined,
+          presentTense: language === "ar" && c.presentTense.trim() ? c.presentTense.trim() : undefined,
+        })
+      ),
     });
   } catch {
     return errorResponse(502, "malformed_response");

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { disambiguateWord, GenerationError } from "@/lib/anthropicClient";
 import type { DisambiguationCandidate, NewWordData } from "@/lib/types";
 import { languageConfig, type Language } from "@/lib/languages";
+import { arabicHeadline } from "@/lib/arabicWord";
 
 type Status = "idle" | "loading" | "picking" | "error";
 
@@ -102,12 +103,13 @@ export function AddWordForm({
               <li key={i} className="word-row">
                 <button type="button" className="candidate-option" onClick={() => pickCandidate(candidate)}>
                   <span dir={config.dir} className="word-arabic">
-                    {candidate.text}{candidate.plural ? ` / ${candidate.plural}` : ""}
+                    {arabicHeadline(candidate)}
                   </span>
                   <span className="word-translation">
                     {candidate.translation}
                     {candidate.partOfSpeech ? ` (${candidate.partOfSpeech})` : ""}
                   </span>
+                  {candidate.root && <span className="help-text">корень: {candidate.root}</span>}
                 </button>
               </li>
             ))}
