@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { disambiguateWord, GenerationError } from "@/lib/anthropicClient";
-import type { DisambiguationCandidate } from "@/lib/types";
+import type { DisambiguationCandidate, NewWordData } from "@/lib/types";
 import { languageConfig, type Language } from "@/lib/languages";
 
 type Status = "idle" | "processing" | "reviewing" | "error" | "done";
@@ -41,7 +41,7 @@ export function BulkAddWords({
   onAddMany,
   language,
 }: {
-  onAddMany: (items: { text: string; translation: string }[]) => number;
+  onAddMany: (items: NewWordData[]) => number;
   language: Language;
 }) {
   const config = languageConfig(language);
@@ -122,7 +122,12 @@ export function BulkAddWords({
   function addSelected() {
     const items = rows
       .filter((r) => r.checked)
-      .map((r) => ({ text: r.candidate.text, translation: r.candidate.translation }));
+      .map((r) => ({
+        text: r.candidate.text,
+        translation: r.candidate.translation,
+        plural: r.candidate.plural,
+        partOfSpeech: r.candidate.partOfSpeech,
+      }));
     setAddedCount(onAddMany(items));
     setStatus("done");
   }
@@ -187,7 +192,7 @@ export function BulkAddWords({
                   <input type="checkbox" checked={row.checked} onChange={() => toggleRow(i)} />
                   <span className="word-row-text">
                     <span dir={config.dir} className="word-arabic">
-                      {row.candidate.text}
+                      {row.candidate.text}{row.candidate.plural ? ` / ${row.candidate.plural}` : ""}
                     </span>
                     <span className="word-translation">
                       {row.candidate.translation}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Word } from "@/lib/types";
+import type { NewWordData, Word } from "@/lib/types";
 import { LANGUAGES, type Language } from "@/lib/languages";
 import { createSrsReview, initialSrsState, reviewSrsState, type SrsRating } from "@/lib/srs";
 import * as account from "@/lib/account";
@@ -91,13 +91,12 @@ export function AppShell() {
     }
   }
 
-  function handleAdd(text: string, translation: string) {
-    if (words.some((w) => w.language === activeLanguage && w.text.trim() === text.trim())) return;
+  function handleAdd(word: NewWordData) {
+    if (words.some((w) => w.language === activeLanguage && w.text.trim() === word.text.trim())) return;
     persist([
       {
         id: crypto.randomUUID(),
-        text,
-        translation,
+        ...word,
         isLearned: false,
         dateAdded: new Date().toISOString(),
         language: activeLanguage,
@@ -108,7 +107,7 @@ export function AppShell() {
     ]);
   }
 
-  function handleAddMany(items: { text: string; translation: string }[]): number {
+  function handleAddMany(items: NewWordData[]): number {
     const seen = new Set(
       words.filter((w) => w.language === activeLanguage).map((w) => w.text.trim())
     );
@@ -119,8 +118,7 @@ export function AppShell() {
       seen.add(key);
       toAdd.push({
         id: crypto.randomUUID(),
-        text: item.text,
-        translation: item.translation,
+        ...item,
         isLearned: false,
         dateAdded: new Date().toISOString(),
         language: activeLanguage,

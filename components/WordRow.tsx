@@ -14,7 +14,7 @@ export function WordRow({
     <li className="word-row">
       <div className="word-row-text">
         <span dir={languageConfig(word.language ?? "ar").dir} className="word-arabic">
-          {word.text}
+          {word.text}{word.plural ? ` / ${word.plural}` : ""}
         </span>
         <span className="word-translation">{word.translation}</span>
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { Word } from "@/lib/types";
+import type { NewWordData, Word } from "@/lib/types";
 import type { Language } from "@/lib/languages";
 import { AddWordForm } from "./AddWordForm";
 import { BulkAddWords } from "./BulkAddWords";
@@ -20,8 +20,8 @@ export function WordList({
 }: {
   words: Word[];
   language: Language;
-  onAdd: (text: string, translation: string) => void;
-  onAddMany: (items: { text: string; translation: string }[]) => number;
+  onAdd: (word: NewWordData) => void;
+  onAddMany: (items: NewWordData[]) => number;
   onToggleLearned: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
