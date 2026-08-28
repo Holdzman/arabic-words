@@ -12,6 +12,14 @@ import { WritingPractice } from "./WritingPractice";
 
 type Mode = "word" | "translate" | "listen" | "quiz" | "write";
 
+const MODES: { id: Mode; label: string; description: string }[] = [
+  { id: "word", label: "Пример", description: "Посмотрите, как знакомое слово звучит в живом предложении." },
+  { id: "translate", label: "Перевод", description: "Переведите целое предложение, составленное из слов вашего словаря." },
+  { id: "listen", label: "Аудирование", description: "Прослушайте фразу, запишите её смысл и оцените свой ответ." },
+  { id: "quiz", label: "Сегодня", description: "Повторите слова, которые запланированы на сегодня." },
+  { id: "write", label: "Письмо", description: "Вспомните слово по переводу и напишите его без подсказок." },
+];
+
 export function Practice({
   words,
   language,
@@ -26,51 +34,41 @@ export function Practice({
   onOpenSettings: () => void;
 }) {
   const [mode, setMode] = useState<Mode>("word");
+  const activeMode = MODES.find((item) => item.id === mode) ?? MODES[0];
 
   if (words.length === 0) {
     return <p className="empty-state">Сначала добавьте слова на вкладке «Слова».</p>;
   }
 
   return (
-    <section>
-      <div className="mode-toggle practice-mode-toggle">
-        <button
-          type="button"
-          className={mode === "word" ? "pill pill-active" : "pill"}
-          onClick={() => setMode("word")}
-        >
-          Пример со словом
-        </button>
-        <button
-          type="button"
-          className={mode === "translate" ? "pill pill-active" : "pill"}
-          onClick={() => setMode("translate")}
-        >
-          Перевод
-        </button>
-        <button
-          type="button"
-          className={mode === "listen" ? "pill pill-active" : "pill"}
-          onClick={() => setMode("listen")}
-        >
-          Аудирование
-        </button>
-        <button
-          type="button"
-          className={mode === "quiz" ? "pill pill-active" : "pill"}
-          onClick={() => setMode("quiz")}
-        >
-          Сегодня
-        </button>
-        <button
-          type="button"
-          className={mode === "write" ? "pill pill-active" : "pill"}
-          onClick={() => setMode("write")}
-        >
-          Письмо
-        </button>
+    <section className="practice-workspace">
+      <header className="practice-heading">
+        <div>
+          <span className="practice-eyebrow">Тренировка</span>
+          <h2>{activeMode.label}</h2>
+          <p>{activeMode.description}</p>
+        </div>
+        <span className="practice-word-count">{words.length} слов</span>
+      </header>
+
+      <div className="practice-mode-scroll">
+        <div className="practice-mode-toggle" role="tablist" aria-label="Режим упражнения">
+          {MODES.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={mode === item.id}
+              className={mode === item.id ? "practice-mode-button practice-mode-active" : "practice-mode-button"}
+              onClick={() => setMode(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
       </div>
 
+      <div className="practice-content">
       {mode === "word" && (
         <WordExamplePractice
           key={language}
@@ -98,6 +96,7 @@ export function Practice({
       {mode === "write" && (
         <WritingPractice key={language} words={words} language={language} onAnswer={onAnswer} />
       )}
+      </div>
     </section>
   );
 }
