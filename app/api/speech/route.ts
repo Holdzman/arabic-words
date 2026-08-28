@@ -8,8 +8,8 @@ const ALLOWED_LANGUAGES = new Set<Language>(["ar", "it"]);
 const MAX_INPUT_LENGTH = 1000;
 
 const SPEECH_INSTRUCTIONS: Record<"ar" | "it", string> = {
-  ar: "Speak in clear, natural Modern Standard Arabic. Use a warm native accent, careful pronunciation, and a calm teaching pace. Do not translate or add words.",
-  it: "Speak in clear, natural Italian as a native speaker from Italy. Use careful pronunciation and a calm teaching pace. Do not translate or add words.",
+  ar: "Use one consistent female speaker with a natural native Modern Standard Arabic accent. Speak at a normal conversational pace with precise, fluent pronunciation. Pronounce every written consonant, especially the initial consonant; never swallow or omit sounds. Read only the supplied text once, without translating, explaining, spelling, or adding words.",
+  it: "Use one consistent male speaker with a natural native Italian accent from Italy. Speak at a normal conversational pace with precise, fluent pronunciation and no dramatic pauses. Read only the supplied text once, without translating, explaining, spelling, or adding words.",
 };
 
 export async function POST(request: Request) {
@@ -57,6 +57,7 @@ export async function POST(request: Request) {
         voice,
         input,
         instructions: SPEECH_INSTRUCTIONS[language as "ar" | "it"],
+        speed: 1,
         response_format: "mp3",
       }),
       signal: AbortSignal.timeout(30_000),

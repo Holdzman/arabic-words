@@ -15,21 +15,17 @@ const cloudAudioCache = new Map<string, Blob>();
 let activeAudio: HTMLAudioElement | null = null;
 let stopActiveSystemVoice: (() => void) | null = null;
 
-function defaultVoice(language: Language): string {
+function dictionaryVoice(language: Language): string {
   if (language === "ar") return "cloud:marin";
   if (language === "it") return "cloud:onyx";
   return "";
 }
 
-function systemVoice(language: Language, savedVoiceId: string): SpeechSynthesisVoice | null {
+function systemVoice(language: Language): SpeechSynthesisVoice | null {
   const voices = window.speechSynthesis
     .getVoices()
     .filter((voice) => voice.lang.toLowerCase().startsWith(language));
-  return (
-    voices.find((voice) => (voice.voiceURI || `${voice.name}-${voice.lang}`) === savedVoiceId) ??
-    voices[0] ??
-    null
-  );
+  return voices[0] ?? null;
 }
 
 export function WordSpeaker({ text, language }: { text: string; language: Language }) {
@@ -88,7 +84,7 @@ export function WordSpeaker({ text, language }: { text: string; language: Langua
     }
   }
 
-  function playSystem(savedVoiceId: string) {
+  function playSystem() {
     if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
       setStatus("error");
       return;
@@ -99,7 +95,7 @@ export function WordSpeaker({ text, language }: { text: string; language: Langua
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = SPEECH_LANGUAGE[language];
     utterance.rate = 0.9;
-    utterance.voice = systemVoice(language, savedVoiceId);
+    utterance.voice = systemVoice(language);
     const finish = (nextStatus: PlaybackStatus) => {
       if (stopActiveSystemVoice === stop) stopActiveSystemVoice = null;
       setStatus(nextStatus);
@@ -113,13 +109,13 @@ export function WordSpeaker({ text, language }: { text: string; language: Langua
   }
 
   function handlePlay() {
-    const voiceId = window.localStorage.getItem(`listening-voice-${language}`) ?? defaultVoice(language);
+    const voiceId = dictionaryVoice(language);
     setStatus("idle");
     if (voiceId.startsWith("cloud:") && (language === "ar" || language === "it")) {
       void playCloud(voiceId);
       return;
     }
-    playSystem(voiceId);
+    playSystem();
   }
 
   const label = status === "loading" ? "Готовлю произношение" : status === "playing" ? "Слово воспроизводится" : `Озвучить: ${text}`;
