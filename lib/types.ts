@@ -80,6 +80,7 @@ export interface TranslationQuizResponse {
 export interface GenerateTranslationQuizRequestBody {
   language: Language;
   words: NewWordData[];
+  focusWord?: NewWordData;
 }
 
 // --- Accounts ---

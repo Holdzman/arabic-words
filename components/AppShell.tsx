@@ -11,6 +11,7 @@ import { WordList } from "./WordList";
 import { Practice } from "./Practice";
 import { Settings } from "./Settings";
 import { AuthGate } from "./AuthGate";
+import { ProgressStats } from "./ProgressStats";
 
 type AuthStatus = "loading" | "anon" | "authed";
 
@@ -211,6 +212,7 @@ export function AppShell() {
             onOpenSettings={() => setActiveTab("settings")}
           />
         )}
+        {activeTab === "stats" && <ProgressStats words={languageWords} />}
         {activeTab === "settings" && (
           <Settings
             username={username ?? ""}

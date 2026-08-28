@@ -1,8 +1,9 @@
-export type AppTab = "words" | "practice" | "settings";
+export type AppTab = "words" | "practice" | "stats" | "settings";
 
 const TABS: { id: AppTab; label: string }[] = [
   { id: "words", label: "Слова" },
   { id: "practice", label: "Практика" },
+  { id: "stats", label: "Прогресс" },
   { id: "settings", label: "Настройки" },
 ];
 

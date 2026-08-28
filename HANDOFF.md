@@ -59,6 +59,14 @@ The “Сегодня” multiple-choice mode ranks distractors locally by simil
 - Implementation: `components/ListeningPractice.tsx`.
 - System narrator selection is persisted per language in `localStorage`.
 - Mobile Safari replay truncation is handled by retaining the utterance and delaying replay after `speechSynthesis.cancel()`.
+- Each generated listening sentence now has one required focus word. After revealing the reference translation, the learner records “Ответил верно” or “Ответил неверно”; this stores `good` or `again` for that focus word in the same SRS history used by other practice modes.
+
+### Progress statistics
+
+- Top-level tab: `Прогресс`.
+- Statistics are calculated locally from the current language's saved words and `srsHistory`; no new database table or analytics service is required.
+- Shows vocabulary size, learned count, reviews today, current study streak, today's rating distribution/confident-answer percentage, and up to five words most often rated `again` or `hard`.
+- Implementation: `components/ProgressStats.tsx`.
 
 ### Natural Arabic and Italian TTS
 

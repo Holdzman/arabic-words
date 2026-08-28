@@ -71,7 +71,10 @@ export async function POST(request: Request) {
       return `${forms} (${w.translation}${partOfSpeech})`;
     })
     .join(", ");
-  const userContent = `Словарь ученика: ${wordsList}.\nНапиши предложение на русском для перевода на ${LANGUAGE_NAMES[language].locative}.`;
+  const focusInstruction = body.focusWord
+    ? ` Предложение обязательно должно естественно использовать слово «${body.focusWord.text}» (${body.focusWord.translation}) или его грамматическую форму.`
+    : "";
+  const userContent = `Словарь ученика: ${wordsList}.${focusInstruction}\nНапиши предложение на русском для перевода на ${LANGUAGE_NAMES[language].locative}.`;
 
   const anthropicRequestBody = {
     model: MODEL,
