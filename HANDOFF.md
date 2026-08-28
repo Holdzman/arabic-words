@@ -48,6 +48,7 @@ The “Сегодня” multiple-choice mode ranks distractors locally by simil
 - New Arabic noun candidates include a fully-voweled plural in optional `Word.plural`; the word list and add confirmation display `singular / plural`. Existing words remain compatible.
 - `Word.partOfSpeech` is also preserved from disambiguation so generated exercises have grammatical context.
 - Translation and listening exercises receive plural and part-of-speech metadata. Their prompt explicitly permits natural verb conjugation by person, number, gender, and tense, and singular/plural noun use instead of mechanically copying dictionary forms.
+- **Do not re-add the plural as a separate dictionary word/SRS entry.** This was tried (PR #18: added a `pluralTranslation` field and split the plural into its own `Word` with independent SRS state) and then explicitly reverted at the user's request (PR #19, plain `git revert` of the merge commit) — after trying it live, the user decided the single-row `singular / plural` display is more convenient to scan than two separate entries. If asked to revisit this, confirm first; don't silently redo it.
 
 ## Additional features completed after item #2
 
