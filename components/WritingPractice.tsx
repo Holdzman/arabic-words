@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Word } from "@/lib/types";
 import { languageConfig, type Language } from "@/lib/languages";
-import { isDue, reviewSrsState, type SrsRating } from "@/lib/srs";
+import { isDue, reviewSrsState, SRS_RATING_LABELS, SRS_RATING_ORDER, type SrsRating } from "@/lib/srs";
 import { isAnswerCorrect } from "@/lib/textCompare";
 
 interface ActiveSession {
@@ -14,22 +14,12 @@ interface ActiveSession {
   input: string;
   submitted: boolean;
   isCorrect: boolean | null;
-  rating: SrsRating | null;
 }
 
 interface SessionResult {
   total: number;
   ratings: Record<SrsRating, number>;
 }
-
-const RATING_LABELS: Record<SrsRating, string> = {
-  again: "Again",
-  hard: "Hard",
-  good: "Good",
-  easy: "Easy",
-};
-
-const RATING_ORDER: SrsRating[] = ["again", "hard", "good", "easy"];
 
 function shuffle<T>(items: T[]): T[] {
   return [...items].sort(() => Math.random() - 0.5);
@@ -58,7 +48,6 @@ export function WritingPractice({
       input: "",
       submitted: false,
       isCorrect: null,
-      rating: null,
     });
     setLastResult(null);
   }
@@ -70,31 +59,23 @@ export function WritingPractice({
   }
 
   function rateAnswer(rating: SrsRating) {
-    if (!session || !session.submitted || session.rating !== null) return;
+    if (!session || !session.submitted) return;
     onAnswer(session.prompt.id, rating);
-    setSession({
-      ...session,
-      rating,
-      ratings: { ...session.ratings, [rating]: session.ratings[rating] + 1 },
-    });
-  }
-
-  function advance() {
-    if (!session) return;
+    const ratings = { ...session.ratings, [rating]: session.ratings[rating] + 1 };
     const nextQueue = session.queue.slice(1);
     if (nextQueue.length === 0) {
-      setLastResult({ total: session.total, ratings: session.ratings });
+      setLastResult({ total: session.total, ratings });
       setSession(null);
       return;
     }
     setSession({
       ...session,
+      ratings,
       queue: nextQueue,
       prompt: nextQueue[0],
       input: "",
       submitted: false,
       isCorrect: null,
-      rating: null,
     });
   }
 
@@ -108,8 +89,8 @@ export function WritingPractice({
           <div className="result-card">
             <p>Сессия завершена: {lastResult.total} слов.</p>
             <p className="help-text">
-              Again {lastResult.ratings.again} · Hard {lastResult.ratings.hard} · Good {lastResult.ratings.good} ·
-              Easy {lastResult.ratings.easy}
+              Не помню {lastResult.ratings.again} · Трудно {lastResult.ratings.hard} · Помню {lastResult.ratings.good} ·
+              Легко {lastResult.ratings.easy}
             </p>
           </div>
         )}
@@ -130,7 +111,7 @@ export function WritingPractice({
     );
   }
 
-  const { prompt, total, queue, submitted, isCorrect, rating, input } = session;
+  const { prompt, total, queue, submitted, isCorrect, input } = session;
   const progress = total - queue.length + 1;
 
   return (
@@ -177,28 +158,22 @@ export function WritingPractice({
           </div>
 
           <div className="rating-grid" aria-label="Оценка ответа">
-            {RATING_ORDER.map((value) => {
+            {SRS_RATING_ORDER.map((value) => {
               const nextInterval = reviewSrsState(prompt, value).srsInterval;
               return (
                 <button
                   key={value}
                   type="button"
-                  className={`rating-button rating-${value}${rating === value ? " rating-selected" : ""}`}
-                  disabled={rating !== null}
+                  className={`rating-button rating-${value}`}
                   onClick={() => rateAnswer(value)}
                 >
-                  <span>{RATING_LABELS[value]}</span>
+                  <span>{SRS_RATING_LABELS[value]}</span>
                   <small>{nextInterval} дн.</small>
                 </button>
               );
             })}
           </div>
 
-          {rating !== null && (
-            <button type="button" onClick={advance}>
-              Следующее слово
-            </button>
-          )}
         </>
       )}
     </section>

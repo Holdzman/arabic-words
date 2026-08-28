@@ -27,7 +27,8 @@ The move from binary correct/incorrect grading to four-level spaced-repetition g
 Active-recall typing practice is complete and deployed (PR #9). Acceptance criteria, as confirmed with the user: a new "Письмо" tab where the learner sees the Russian translation and types the word in the target language (fixed direction, not toggleable), and answer comparison ignores Arabic diacritics entirely (not just shadda/tashdid).
 
 - Comparison logic: `lib/textCompare.ts` (`normalizeForCompare`, `isAnswerCorrect`) — strips all Arabic tashkil (harakat, tanween, shadda, sukun, superscript alef, tatweel) before comparing; Arabic alef variants (أ/إ/آ/ا) are **not** normalized, an exact match is still required there.
-- Session UI: `components/WritingPractice.tsx`, mirrors `MultipleChoicePractice.tsx`'s session shape (snapshot queue, no repeats, 4-button Again/Hard/Good/Easy rating with projected interval, completion summary). No 4-word minimum guard (unlike `MultipleChoicePractice`), since typing needs no distractors.
+- Session UI: `components/WritingPractice.tsx`, mirrors `MultipleChoicePractice.tsx`'s session shape (snapshot queue, no repeats, four-level rating with projected interval, completion summary). No 4-word minimum guard (unlike `MultipleChoicePractice`), since typing needs no distractors.
+- User-facing rating labels are Russian (`Не помню`, `Трудно`, `Помню`, `Легко`) while stored rating values remain backward-compatible (`again`, `hard`, `good`, `easy`). Choosing a rating immediately advances to the next word in both “Сегодня” and “Письмо”.
 - Wired into `components/Practice.tsx` as the "Письмо" pill (last, after "Сегодня").
 
 ## Completed after item #3: Arabic word lookup now accepts Russian input

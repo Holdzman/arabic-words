@@ -9,6 +9,15 @@ export interface SrsState {
 
 export type SrsRating = "again" | "hard" | "good" | "easy";
 
+export const SRS_RATING_LABELS: Record<SrsRating, string> = {
+  again: "Не помню",
+  hard: "Трудно",
+  good: "Помню",
+  easy: "Легко",
+};
+
+export const SRS_RATING_ORDER: SrsRating[] = ["again", "hard", "good", "easy"];
+
 export interface SrsReview {
   reviewedAt: string;
   rating: SrsRating;
