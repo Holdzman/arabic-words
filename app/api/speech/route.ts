@@ -9,8 +9,15 @@ const MAX_INPUT_LENGTH = 1000;
 
 const SPEECH_INSTRUCTIONS: Record<"ar" | "it", string> = {
   ar: "Use one consistent female speaker with a natural native Modern Standard Arabic accent. Speak at a normal conversational pace with precise, fluent pronunciation. Pronounce every written consonant, especially the initial consonant; never swallow or omit sounds. Read only the supplied text once, without translating, explaining, spelling, or adding words.",
-  it: "Use one consistent male speaker with a natural native Italian accent from Italy. Speak at a normal conversational pace with precise, fluent pronunciation and no dramatic pauses. Read only the supplied text once, without translating, explaining, spelling, or adding words.",
+  it: "Use one consistent male speaker with a natural native Italian accent from Italy. Speak at a normal conversational pace with precise, fluent pronunciation. Read a short phrase as one smooth natural unit, with no pause between its words. Read only the supplied text once, without translating, explaining, spelling, or adding words.",
 };
+
+function speechInstructions(language: "ar" | "it", input: string): string {
+  if (language === "ar" && input.normalize("NFC") === "قَدَّمَ".normalize("NFC")) {
+    return `${SPEECH_INSTRUCTIONS.ar} Pronounce this exact word as “qaddama”: begin with a clearly audible deep /q/ sound (Arabic ق), then “addama”. Never pronounce it as “addama”.`;
+  }
+  return SPEECH_INSTRUCTIONS[language];
+}
 
 export async function POST(request: Request) {
   if (!(await getSessionUserId())) {
@@ -56,7 +63,7 @@ export async function POST(request: Request) {
         model: "gpt-4o-mini-tts",
         voice,
         input,
-        instructions: SPEECH_INSTRUCTIONS[language as "ar" | "it"],
+        instructions: speechInstructions(language as "ar" | "it", input),
         speed: 1,
         response_format: "mp3",
       }),
