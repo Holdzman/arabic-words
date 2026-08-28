@@ -84,7 +84,13 @@ export function Practice({
         <TranslationQuizPractice key={language} words={words} language={language} onOpenSettings={onOpenSettings} />
       )}
       {mode === "listen" && (
-        <ListeningPractice key={language} words={words} language={language} onOpenSettings={onOpenSettings} />
+        <ListeningPractice
+          key={language}
+          words={words}
+          language={language}
+          onAnswer={onAnswer}
+          onOpenSettings={onOpenSettings}
+        />
       )}
       {mode === "quiz" && (
         <MultipleChoicePractice key={language} words={words} language={language} onAnswer={onAnswer} />

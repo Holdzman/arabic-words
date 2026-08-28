@@ -38,10 +38,12 @@ function voiceQualityScore(voice: SpeechSynthesisVoice): number {
 export function ListeningPractice({
   words,
   language,
+  onAnswer,
   onOpenSettings,
 }: {
   words: Word[];
   language: Language;
+  onAnswer: (id: string, rating: "again" | "good") => void;
   onOpenSettings: () => void;
 }) {
   const config = languageConfig(language);
@@ -49,6 +51,8 @@ export function ListeningPractice({
   const [result, setResult] = useState<TranslationQuizResponse | null>(null);
   const [userAnswer, setUserAnswer] = useState("");
   const [revealed, setRevealed] = useState(false);
+  const [focusWord, setFocusWord] = useState<Word | null>(null);
+  const [rated, setRated] = useState<"correct" | "incorrect" | null>(null);
   const [rate, setRate] = useState(1);
   const [hasPlayed, setHasPlayed] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -130,11 +134,14 @@ export function ListeningPractice({
     setResult(null);
     setUserAnswer("");
     setRevealed(false);
+    setRated(null);
     setHasPlayed(false);
     setIsSpeaking(false);
 
     try {
-      const quiz = await generateTranslationQuiz(language, words);
+      const nextFocusWord = words[Math.floor(Math.random() * words.length)];
+      const quiz = await generateTranslationQuiz(language, words, nextFocusWord);
+      setFocusWord(nextFocusWord);
       setResult(quiz);
       const voice = selectedVoiceId || defaultCloudVoice(language);
       if (voice.startsWith("cloud:")) await loadCloudAudio(quiz.answer, voice);
@@ -148,6 +155,12 @@ export function ListeningPractice({
     } finally {
       setIsGenerating(false);
     }
+  }
+
+  function handleListeningResult(correct: boolean) {
+    if (!focusWord || rated) return;
+    onAnswer(focusWord.id, correct ? "good" : "again");
+    setRated(correct ? "correct" : "incorrect");
   }
 
   function speak() {
@@ -298,6 +311,20 @@ export function ListeningPractice({
               </p>
               <p className="result-translation">Эталон: {result.prompt}</p>
               <p className="help-text">Ваш ответ: {userAnswer}</p>
+              {!rated ? (
+                <div className="listening-rating" aria-label="Результат аудирования">
+                  <button type="button" className="answer-wrong" onClick={() => handleListeningResult(false)}>
+                    Ответил неверно
+                  </button>
+                  <button type="button" className="answer-correct" onClick={() => handleListeningResult(true)}>
+                    Ответил верно
+                  </button>
+                </div>
+              ) : (
+                <p className="rating-saved" role="status">
+                  {rated === "correct" ? "Записано: помню" : "Записано: не помню"}
+                </p>
+              )}
             </div>
           )}
         </div>

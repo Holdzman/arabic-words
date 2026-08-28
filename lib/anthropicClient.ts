@@ -70,21 +70,33 @@ export async function disambiguateWord(
 
 export async function generateTranslationQuiz(
   language: Language,
-  words: Word[]
+  words: Word[],
+  focusWord?: Word
 ): Promise<TranslationQuizResponse> {
   if (!hasApiKeyCached()) {
     throw new GenerationError("missing_api_key", errorMessage("missing_api_key"));
   }
 
   try {
+    const orderedWords = focusWord
+      ? [focusWord, ...words.filter((word) => word.id !== focusWord.id)]
+      : words;
     return await postJson<TranslationQuizResponse>("/api/generate-translation-quiz", {
       language,
-      words: words.slice(0, TRANSLATION_QUIZ_WORD_CAP).map((w) => ({
+      words: orderedWords.slice(0, TRANSLATION_QUIZ_WORD_CAP).map((w) => ({
         text: w.text,
         translation: w.translation,
         plural: w.plural,
         partOfSpeech: w.partOfSpeech,
       })),
+      focusWord: focusWord
+        ? {
+            text: focusWord.text,
+            translation: focusWord.translation,
+            plural: focusWord.plural,
+            partOfSpeech: focusWord.partOfSpeech,
+          }
+        : undefined,
     });
   } catch (err) {
     raiseGenerationError(err);
