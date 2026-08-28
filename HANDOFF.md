@@ -1,12 +1,12 @@
 # Handoff for the next coding agent
 
-Updated: 2026-08-27
+Updated: 2026-08-28
 
 ## Repository state
 
 - Repository: `Holdzman/arabic-words`
 - Continue from: `main`
-- Latest product commit at handoff creation: `5979508`
+- Latest product commit at handoff creation: `4b6ee77`
 - Vercel automatically deploys `main`.
 - Do not work directly on `main`: use a feature branch and a pull request.
 
@@ -22,7 +22,21 @@ The move from binary correct/incorrect grading to four-level spaced-repetition g
 - The “Сегодня” session shows projected intervals, rating distribution, and the 10 most recent reviews.
 - Primary UI: `components/MultipleChoicePractice.tsx`.
 
-Before starting roadmap item #3, restate its acceptance criteria from the original plan. The exact definition of item #3 is not recorded in this repository, so do not infer or silently redefine it.
+## Completed roadmap item #3
+
+Active-recall typing practice is complete and deployed (PR #9). Acceptance criteria, as confirmed with the user: a new "Письмо" tab where the learner sees the Russian translation and types the word in the target language (fixed direction, not toggleable), and answer comparison ignores Arabic diacritics entirely (not just shadda/tashdid).
+
+- Comparison logic: `lib/textCompare.ts` (`normalizeForCompare`, `isAnswerCorrect`) — strips all Arabic tashkil (harakat, tanween, shadda, sukun, superscript alef, tatweel) before comparing; Arabic alef variants (أ/إ/آ/ا) are **not** normalized, an exact match is still required there.
+- Session UI: `components/WritingPractice.tsx`, mirrors `MultipleChoicePractice.tsx`'s session shape (snapshot queue, no repeats, 4-button Again/Hard/Good/Easy rating with projected interval, completion summary). No 4-word minimum guard (unlike `MultipleChoicePractice`), since typing needs no distractors.
+- Wired into `components/Practice.tsx` as the "Письмо" pill (last, after "Сегодня").
+
+## Completed after item #3: Arabic word lookup now accepts Russian input
+
+Previously, `app/api/disambiguate-word/route.ts`'s Arabic branch only handled Arabic-script input (tashkil disambiguation). It now also accepts Russian input and returns fully-voweled Arabic candidates, matching how Italian/English lookup already worked in both directions (PR #11).
+
+As a follow-up (PR #12), the single-word Arabic add form's separate "Перевод на русский (подсказка)" hint field was removed from `components/AddWordForm.tsx` — it was Arabic-only, disabled the submit button in a confusing way when the main field was empty, and is no longer needed now that the main field accepts Russian directly. Arabic's add form now matches Italian/English exactly (one input field, placeholder mentions Russian as an alternative). `BulkAddWords.tsx`'s inline `слово - подсказка` bulk-parsing syntax is untouched — that's a different mechanism, not a form field, and still works.
+
+Roadmap items #4–#10 (audio — now partly done via listening practice/TTS below, richer Arabic word model, intelligent distractors, JSONB→relational migration, stats, README update, automated tests) remain open. Do not start any of them without first restating the specific item's scope and getting explicit confirmation — this repo has already had one incident of an item being silently redefined; always restate and confirm instead of inferring.
 
 ## Additional features completed after item #2
 
@@ -71,7 +85,7 @@ npm run build
 
 The build requires the project’s server environment variables. A syntactically valid placeholder `DATABASE_URL` is sufficient for local compile/type verification because the build does not connect to the database.
 
-Latest completed changes passed ESLint, TypeScript, and the production build. Vercel deployments for commits through `5979508` succeeded.
+Latest completed changes passed ESLint, TypeScript, and the production build. Vercel deployments for commits through `4b6ee77` succeeded.
 
 ## Working conventions
 
