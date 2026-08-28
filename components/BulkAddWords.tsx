@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { disambiguateWord, GenerationError } from "@/lib/anthropicClient";
 import type { DisambiguationCandidate, NewWordData } from "@/lib/types";
 import { languageConfig, type Language } from "@/lib/languages";
+import { arabicHeadline } from "@/lib/arabicWord";
 
 type Status = "idle" | "processing" | "reviewing" | "error" | "done";
 
@@ -127,6 +128,10 @@ export function BulkAddWords({
         translation: r.candidate.translation,
         plural: r.candidate.plural,
         partOfSpeech: r.candidate.partOfSpeech,
+        root: r.candidate.root,
+        gender: r.candidate.gender,
+        feminineForm: r.candidate.feminineForm,
+        presentTense: r.candidate.presentTense,
       }));
     setAddedCount(onAddMany(items));
     setStatus("done");
@@ -192,12 +197,13 @@ export function BulkAddWords({
                   <input type="checkbox" checked={row.checked} onChange={() => toggleRow(i)} />
                   <span className="word-row-text">
                     <span dir={config.dir} className="word-arabic">
-                      {row.candidate.text}{row.candidate.plural ? ` / ${row.candidate.plural}` : ""}
+                      {arabicHeadline(row.candidate)}
                     </span>
                     <span className="word-translation">
                       {row.candidate.translation}
                       {row.candidate.partOfSpeech ? ` (${row.candidate.partOfSpeech})` : ""}
                     </span>
+                    {row.candidate.root && <span className="help-text">корень: {row.candidate.root}</span>}
                   </span>
                 </label>
               </li>

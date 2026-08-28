@@ -1,5 +1,6 @@
 import type { Word } from "@/lib/types";
 import { languageConfig } from "@/lib/languages";
+import { arabicHeadline } from "@/lib/arabicWord";
 
 export function WordRow({
   word,
@@ -14,9 +15,10 @@ export function WordRow({
     <li className="word-row">
       <div className="word-row-text">
         <span dir={languageConfig(word.language ?? "ar").dir} className="word-arabic">
-          {word.text}{word.plural ? ` / ${word.plural}` : ""}
+          {arabicHeadline(word)}
         </span>
         <span className="word-translation">{word.translation}</span>
+        {word.root && <span className="help-text">корень: {word.root}</span>}
       </div>
       <div className="word-row-actions">
         <button

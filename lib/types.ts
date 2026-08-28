@@ -7,6 +7,10 @@ export interface Word {
   translation: string;
   plural?: string;
   partOfSpeech?: string;
+  root?: string;
+  gender?: "m" | "f";
+  feminineForm?: string;
+  presentTense?: string;
   isLearned: boolean;
   dateAdded: string;
   language: Language;
@@ -22,6 +26,10 @@ export interface NewWordData {
   translation: string;
   plural?: string;
   partOfSpeech?: string;
+  root?: string;
+  gender?: "m" | "f";
+  feminineForm?: string;
+  presentTense?: string;
 }
 
 export interface GeneratedSentence {
@@ -60,6 +68,10 @@ export interface DisambiguationCandidate {
   translation: string;
   partOfSpeech: string;
   plural?: string;
+  root?: string;
+  gender?: "m" | "f";
+  feminineForm?: string;
+  presentTense?: string;
 }
 
 export interface DisambiguateWordRequestBody {
