@@ -38,6 +38,10 @@ As a follow-up (PR #12), the single-word Arabic add form's separate "Перев�
 
 Roadmap items #4–#10 (audio — now partly done via listening practice/TTS below, richer Arabic word model, intelligent distractors, JSONB→relational migration, stats, README update, automated tests) remain open. Do not start any of them without first restating the specific item's scope and getting explicit confirmation — this repo has already had one incident of an item being silently redefined; always restate and confirm instead of inferring.
 
+## Intelligent distractors
+
+The “Сегодня” multiple-choice mode ranks distractors locally by similarity of the visible answer and the opposite side of the word card. It compares character bigrams, shared tokens, length, and initial letters; duplicate visible answers are avoided when the dictionary has enough alternatives. A small random tie-breaker keeps repeated sessions from always showing the same three choices. This does not call an AI service or add per-question cost. Implementation: `components/MultipleChoicePractice.tsx`.
+
 ## Additional features completed after item #2
 
 ### Listening practice
