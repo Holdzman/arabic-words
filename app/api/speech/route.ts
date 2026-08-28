@@ -8,9 +8,17 @@ const ALLOWED_LANGUAGES = new Set<Language>(["ar", "it"]);
 const MAX_INPUT_LENGTH = 1000;
 
 const SPEECH_INSTRUCTIONS: Record<"ar" | "it", string> = {
-  ar: "Speak in clear, natural Modern Standard Arabic. Use a warm native accent, careful pronunciation, and a calm teaching pace. Do not translate or add words.",
-  it: "Speak in clear, natural Italian as a native speaker from Italy. Use careful pronunciation and a calm teaching pace. Do not translate or add words.",
+  ar: "Use one consistent female speaker with a natural native Modern Standard Arabic accent. Speak at a normal conversational pace with precise, fluent pronunciation. Pronounce every written consonant, especially the initial consonant; never swallow or omit sounds. Read only the supplied text once, without translating, explaining, spelling, or adding words.",
+  it: "Use one consistent male speaker with a natural native Italian accent from Italy. Speak at a normal conversational pace with precise, fluent pronunciation. Read a short phrase as one smooth natural unit, with no pause between its words. Read only the supplied text once, without translating, explaining, spelling, or adding words.",
 };
+
+function speechInput(language: "ar" | "it", input: string): string {
+  if (language === "ar" && input.normalize("NFC") === "قَدَّمَ".normalize("NFC")) {
+    // Expanding the shadda gives the speech model an unambiguous consonant sequence.
+    return "قَدْدَمَ";
+  }
+  return input;
+}
 
 export async function POST(request: Request) {
   if (!(await getSessionUserId())) {
@@ -55,8 +63,9 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model: "gpt-4o-mini-tts",
         voice,
-        input,
+        input: speechInput(language as "ar" | "it", input),
         instructions: SPEECH_INSTRUCTIONS[language as "ar" | "it"],
+        speed: 1,
         response_format: "mp3",
       }),
       signal: AbortSignal.timeout(30_000),
