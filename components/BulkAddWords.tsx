@@ -19,8 +19,9 @@ interface ReviewRow {
 }
 
 function parseQueue(raw: string): QueueItem[] {
+  const hasExplicitSeparator = /[\n,]/.test(raw);
   const groups = raw
-    .split(/[\n,]/)
+    .split(hasExplicitSeparator ? /[\n,]/ : /\s+/)
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
 
@@ -31,9 +32,7 @@ function parseQueue(raw: string): QueueItem[] {
       items.push({ text: group.slice(0, sepIndex).trim(), hint: group.slice(sepIndex + 3).trim() });
       continue;
     }
-    for (const token of group.split(/\s+/)) {
-      if (token.length > 0) items.push({ text: token, hint: "" });
-    }
+    items.push({ text: group, hint: "" });
   }
   return items;
 }
@@ -147,8 +146,8 @@ export function BulkAddWords({
             className="bulk-textarea"
             placeholder={
               config.supportsDisambiguation
-                ? "Слова через запятую или по одной на строку:\nخبز - печь, باذنجان, طباخ"
-                : `Слова на ${config.locative} (или по-русски) через запятую или по одному на строку:\ngatto, cane, привет`
+                ? "Слова и фразы через запятую или по одной на строку:\nخبز - печь, باذنجان, طباخ"
+                : `Слова и фразы на ${config.locative} (или по-русски) через запятую или по одному на строку:\ngatto, Come stai?, un caffè americano`
             }
             value={raw}
             onChange={(e) => setRaw(e.target.value)}
