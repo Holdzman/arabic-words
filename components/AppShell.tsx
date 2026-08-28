@@ -92,22 +92,6 @@ export function AppShell() {
     }
   }
 
-  function handleAdd(word: NewWordData) {
-    if (words.some((w) => w.language === activeLanguage && w.text.trim() === word.text.trim())) return;
-    persist([
-      {
-        id: crypto.randomUUID(),
-        ...word,
-        isLearned: false,
-        dateAdded: new Date().toISOString(),
-        language: activeLanguage,
-        ...initialSrsState(),
-        srsHistory: [],
-      },
-      ...words,
-    ]);
-  }
-
   function handleAddMany(items: NewWordData[]): number {
     const seen = new Set(
       words.filter((w) => w.language === activeLanguage).map((w) => w.text.trim())
@@ -197,7 +181,6 @@ export function AppShell() {
           <WordList
             words={languageWords}
             language={activeLanguage}
-            onAdd={handleAdd}
             onAddMany={handleAddMany}
             onToggleLearned={handleToggleLearned}
             onDelete={handleDelete}
