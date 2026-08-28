@@ -12,11 +12,12 @@ const SPEECH_INSTRUCTIONS: Record<"ar" | "it", string> = {
   it: "Use one consistent male speaker with a natural native Italian accent from Italy. Speak at a normal conversational pace with precise, fluent pronunciation. Read a short phrase as one smooth natural unit, with no pause between its words. Read only the supplied text once, without translating, explaining, spelling, or adding words.",
 };
 
-function speechInstructions(language: "ar" | "it", input: string): string {
+function speechInput(language: "ar" | "it", input: string): string {
   if (language === "ar" && input.normalize("NFC") === "قَدَّمَ".normalize("NFC")) {
-    return `${SPEECH_INSTRUCTIONS.ar} Pronounce this exact word as “qaddama”: begin with a clearly audible deep /q/ sound (Arabic ق), then “addama”. Never pronounce it as “addama”.`;
+    // Expanding the shadda gives the speech model an unambiguous consonant sequence.
+    return "قَدْدَمَ";
   }
-  return SPEECH_INSTRUCTIONS[language];
+  return input;
 }
 
 export async function POST(request: Request) {
@@ -62,8 +63,8 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model: "gpt-4o-mini-tts",
         voice,
-        input,
-        instructions: speechInstructions(language as "ar" | "it", input),
+        input: speechInput(language as "ar" | "it", input),
+        instructions: SPEECH_INSTRUCTIONS[language as "ar" | "it"],
         speed: 1,
         response_format: "mp3",
       }),
