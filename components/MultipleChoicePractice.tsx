@@ -39,8 +39,84 @@ function shuffle<T>(items: T[]): T[] {
   return [...items].sort(() => Math.random() - 0.5);
 }
 
-function buildQuestion(prompt: Word, allWords: Word[]): Question {
-  const distractors = shuffle(allWords.filter((w) => w.id !== prompt.id)).slice(0, 3);
+function normalizeForSimilarity(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLocaleLowerCase("ru-RU")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function bigrams(value: string): Set<string> {
+  const compact = normalizeForSimilarity(value).replace(/\s/g, "");
+  if (compact.length < 2) return new Set(compact ? [compact] : []);
+  return new Set(Array.from({ length: compact.length - 1 }, (_, index) => compact.slice(index, index + 2)));
+}
+
+function textSimilarity(left: string, right: string): number {
+  const normalizedLeft = normalizeForSimilarity(left);
+  const normalizedRight = normalizeForSimilarity(right);
+  if (!normalizedLeft || !normalizedRight) return 0;
+  if (normalizedLeft === normalizedRight) return 1;
+
+  const leftBigrams = bigrams(normalizedLeft);
+  const rightBigrams = bigrams(normalizedRight);
+  const sharedBigrams = [...leftBigrams].filter((item) => rightBigrams.has(item)).length;
+  const unionSize = new Set([...leftBigrams, ...rightBigrams]).size || 1;
+  const bigramScore = sharedBigrams / unionSize;
+
+  const leftTokens = new Set(normalizedLeft.split(" "));
+  const rightTokens = new Set(normalizedRight.split(" "));
+  const sharedTokens = [...leftTokens].filter((item) => rightTokens.has(item)).length;
+  const tokenScore = sharedTokens / (new Set([...leftTokens, ...rightTokens]).size || 1);
+  const lengthScore = Math.min(normalizedLeft.length, normalizedRight.length) / Math.max(normalizedLeft.length, normalizedRight.length);
+  const prefixScore = normalizedLeft[0] === normalizedRight[0] ? 1 : 0;
+
+  return bigramScore * 0.5 + tokenScore * 0.25 + lengthScore * 0.15 + prefixScore * 0.1;
+}
+
+function answerText(word: Word, direction: Direction): string {
+  return direction === "toTranslation" ? word.translation : word.text;
+}
+
+function distractorScore(prompt: Word, candidate: Word, direction: Direction): number {
+  const primaryScore = textSimilarity(answerText(prompt, direction), answerText(candidate, direction));
+  const secondaryScore = textSimilarity(
+    answerText(prompt, direction === "toTranslation" ? "toWord" : "toTranslation"),
+    answerText(candidate, direction === "toTranslation" ? "toWord" : "toTranslation"),
+  );
+  return primaryScore * 0.8 + secondaryScore * 0.2;
+}
+
+function buildQuestion(prompt: Word, allWords: Word[], direction: Direction): Question {
+  const promptAnswer = normalizeForSimilarity(answerText(prompt, direction));
+  const candidates = allWords
+    .filter((word) => word.id !== prompt.id)
+    .map((word) => ({ word, score: distractorScore(prompt, word, direction) + Math.random() * 0.08 }))
+    .sort((left, right) => right.score - left.score);
+
+  const distinctAnswers = new Set([promptAnswer]);
+  const distractors: Word[] = [];
+  for (const { word } of candidates) {
+    const normalizedAnswer = normalizeForSimilarity(answerText(word, direction));
+    if (!normalizedAnswer || distinctAnswers.has(normalizedAnswer)) continue;
+    distinctAnswers.add(normalizedAnswer);
+    distractors.push(word);
+    if (distractors.length === 3) break;
+  }
+
+  // Preserve the existing four-option behavior for small dictionaries that
+  // contain duplicate visible answers, while preferring unambiguous options.
+  if (distractors.length < 3) {
+    for (const { word } of candidates) {
+      if (distractors.some((item) => item.id === word.id)) continue;
+      distractors.push(word);
+      if (distractors.length === 3) break;
+    }
+  }
+
   return { prompt, options: shuffle([prompt, ...distractors]) };
 }
 
@@ -64,7 +140,7 @@ export function MultipleChoicePractice({
       queue,
       total: queue.length,
       ratings: { again: 0, hard: 0, good: 0, easy: 0 },
-      question: buildQuestion(queue[0], words),
+      question: buildQuestion(queue[0], words, direction),
       selectedId: null,
       rating: null,
     });
@@ -100,7 +176,7 @@ export function MultipleChoicePractice({
     setSession({
       ...session,
       queue: nextQueue,
-      question: buildQuestion(nextQueue[0], words),
+      question: buildQuestion(nextQueue[0], words, direction),
       selectedId: null,
       rating: null,
     });
