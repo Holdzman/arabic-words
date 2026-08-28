@@ -8,10 +8,10 @@ import { languageConfig, type Language } from "@/lib/languages";
 type Status = "idle" | "loading" | "picking" | "error";
 
 export function AddWordForm({
-  onAdd,
+  onAddMany,
   language,
 }: {
-  onAdd: (word: NewWordData) => void;
+  onAddMany: (items: NewWordData[]) => number;
   language: Language;
 }) {
   const config = languageConfig(language);
@@ -50,14 +50,29 @@ export function AddWordForm({
   }
 
   function pickCandidate(candidate: DisambiguationCandidate) {
-    onAdd(candidate);
+    const items: NewWordData[] = [
+      {
+        text: candidate.text,
+        translation: candidate.translation,
+        plural: candidate.plural,
+        partOfSpeech: candidate.partOfSpeech,
+      },
+    ];
+    if (candidate.plural && candidate.plural.trim() && candidate.plural.trim() !== candidate.text.trim()) {
+      items.push({
+        text: candidate.plural,
+        translation: candidate.pluralTranslation?.trim() || candidate.translation,
+        partOfSpeech: "множественное число",
+      });
+    }
+    onAddMany(items);
     reset();
   }
 
   function addAsIs() {
     const trimmedText = text.trim();
     if (!trimmedText) return;
-    onAdd({ text: trimmedText, translation: "" });
+    onAddMany([{ text: trimmedText, translation: "" }]);
     reset();
   }
 

@@ -60,6 +60,7 @@ export interface DisambiguationCandidate {
   translation: string;
   partOfSpeech: string;
   plural?: string;
+  pluralTranslation?: string;
 }
 
 export interface DisambiguateWordRequestBody {
