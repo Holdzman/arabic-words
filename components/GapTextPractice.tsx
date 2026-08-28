@@ -19,6 +19,7 @@ export function GapTextPractice({
   const [result, setResult] = useState<GapTextResponse | null>(null);
   const [answers, setAnswers] = useState<string[]>([]);
   const [checked, setChecked] = useState(false);
+  const [showHints, setShowHints] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [showSettingsAction, setShowSettingsAction] = useState(false);
@@ -29,6 +30,7 @@ export function GapTextPractice({
     setShowSettingsAction(false);
     setResult(null);
     setChecked(false);
+    setShowHints(false);
     try {
       const next = await generateGapText(language, words);
       setResult(next);
@@ -86,11 +88,10 @@ export function GapTextPractice({
                         setAnswers(next);
                         setChecked(false);
                       }}
-                      aria-label={`Пропуск ${index + 1}: ${blank.translation}`}
+                      aria-label={`Пропуск ${index + 1}`}
                       autoComplete="off"
                       spellCheck={false}
                     />
-                    <small dir="ltr">{blank.dictionaryForm} — {blank.translation}</small>
                     {checked && !correct && <small className="gap-correction">Правильно: {blank.answer}</small>}
                   </span>
                 </span>
@@ -103,8 +104,23 @@ export function GapTextPractice({
             <button type="button" onClick={() => setChecked(true)} disabled={answers.some((answer) => !answer.trim())}>
               Проверить
             </button>
+            <button type="button" onClick={() => setShowHints((visible) => !visible)}>
+              {showHints ? "Скрыть подсказку" : "Подсказка"}
+            </button>
             {checked && <strong>{correctCount} из {result.blanks.length} правильно</strong>}
           </div>
+          {showHints && (
+            <div className="gap-hints">
+              <strong>Используйте эти слова:</strong>
+              <ul>
+                {result.blanks.map((blank, index) => (
+                  <li key={`${blank.dictionaryForm}-${index}`}>
+                    <span dir={config.dir}>{blank.dictionaryForm}</span> — {blank.translation}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {checked && <p className="gap-translation">Перевод: {result.translation}</p>}
         </div>
       )}
