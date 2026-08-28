@@ -6,6 +6,7 @@ import type {
   DisambiguateWordResponse,
   GeneratedSentence,
   GenerationErrorResponse,
+  GapTextResponse,
   TranslationQuizResponse,
   Word,
 } from "./types";
@@ -97,6 +98,28 @@ export async function generateTranslationQuiz(
             partOfSpeech: focusWord.partOfSpeech,
           }
         : undefined,
+    });
+  } catch (err) {
+    raiseGenerationError(err);
+  }
+}
+
+export async function generateGapText(language: Language, words: Word[]): Promise<GapTextResponse> {
+  if (!hasApiKeyCached()) {
+    throw new GenerationError("missing_api_key", errorMessage("missing_api_key"));
+  }
+
+  try {
+    return await postJson<GapTextResponse>("/api/generate-gap-text", {
+      language,
+      words: words.slice(0, TRANSLATION_QUIZ_WORD_CAP).map((word) => ({
+        text: word.text,
+        translation: word.translation,
+        plural: word.plural,
+        partOfSpeech: word.partOfSpeech,
+        feminineForm: word.feminineForm,
+        presentTense: word.presentTense,
+      })),
     });
   } catch (err) {
     raiseGenerationError(err);

@@ -95,6 +95,24 @@ export interface GenerateTranslationQuizRequestBody {
   focusWord?: NewWordData;
 }
 
+export interface GapTextBlank {
+  before: string;
+  answer: string;
+  dictionaryForm: string;
+  translation: string;
+}
+
+export interface GapTextResponse {
+  blanks: GapTextBlank[];
+  ending: string;
+  translation: string;
+}
+
+export interface GenerateGapTextRequestBody {
+  language: Language;
+  words: NewWordData[];
+}
+
 // --- Accounts ---
 
 export type AuthErrorCode =
