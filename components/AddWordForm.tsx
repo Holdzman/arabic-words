@@ -16,14 +16,12 @@ export function AddWordForm({
 }) {
   const config = languageConfig(language);
   const [text, setText] = useState("");
-  const [translationHint, setTranslationHint] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [candidates, setCandidates] = useState<DisambiguationCandidate[]>([]);
   const [errorText, setErrorText] = useState<string | null>(null);
 
   function reset() {
     setText("");
-    setTranslationHint("");
     setStatus("idle");
     setCandidates([]);
     setErrorText(null);
@@ -37,7 +35,7 @@ export function AddWordForm({
     setErrorText(null);
 
     try {
-      const result = await disambiguateWord(language, trimmedText, translationHint.trim());
+      const result = await disambiguateWord(language, trimmedText, "");
       setCandidates(result);
       setStatus("picking");
     } catch (err) {
@@ -59,7 +57,7 @@ export function AddWordForm({
   function addAsIs() {
     const trimmedText = text.trim();
     if (!trimmedText) return;
-    onAdd(trimmedText, translationHint.trim());
+    onAdd(trimmedText, "");
     reset();
   }
 
@@ -69,20 +67,11 @@ export function AddWordForm({
         <input
           type="text"
           dir="auto"
-          placeholder={config.supportsDisambiguation ? config.placeholder : `${config.placeholder} или по-русски`}
+          placeholder={`${config.placeholder} или по-русски`}
           value={text}
           disabled={status === "loading"}
           onChange={(e) => setText(e.target.value)}
         />
-        {config.supportsDisambiguation && (
-          <input
-            type="text"
-            placeholder="Перевод на русский (подсказка, необязательно)"
-            value={translationHint}
-            disabled={status === "loading"}
-            onChange={(e) => setTranslationHint(e.target.value)}
-          />
-        )}
         <button type="submit" disabled={!text.trim() || status === "loading"}>
           {status === "loading" ? "Уточняю варианты…" : "Добавить"}
         </button>
