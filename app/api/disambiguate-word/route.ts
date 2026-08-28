@@ -31,9 +31,8 @@ const ARABIC_SYSTEM_PROMPT =
   "первым, но всё равно верни другие правдоподобные варианты, если они существуют. Для каждого варианта дай: " +
   "слово на арабском с полными огласовками (ташкиль), точный перевод на русский язык, часть речи (например " +
   "'существительное', 'глагол', 'прилагательное') и форму множественного числа. Для существительного укажи " +
-  "его наиболее употребительное множественное число на арабском с полными огласовками и точный перевод этого " +
-  "множественного числа на русский язык (например 'книги' для 'كُتُب'); для остальных частей речи верни пустые " +
-  "строки в обоих полях. Если разумный вариант только один, верни ровно один. " +
+  "его наиболее употребительное множественное число на арабском с полными огласовками; для остальных частей " +
+  "речи верни пустую строку. Если разумный вариант только один, верни ровно один. " +
   "Максимум 4 варианта, отсортированных от наиболее вероятного к наименее вероятному.";
 
 function buildLookupSystemPrompt(language: Language): string {
@@ -103,9 +102,8 @@ export async function POST(request: Request) {
                   translation: { type: "string" },
                   note: { type: "string" },
                   plural: { type: "string" },
-                  pluralTranslation: { type: "string" },
                 },
-                required: ["word", "translation", "note", "plural", "pluralTranslation"],
+                required: ["word", "translation", "note", "plural"],
                 additionalProperties: false,
               },
             },
@@ -176,8 +174,7 @@ export async function POST(request: Request) {
         typeof c.word !== "string" ||
         typeof c.translation !== "string" ||
         typeof c.note !== "string" ||
-        typeof c.plural !== "string" ||
-        typeof c.pluralTranslation !== "string"
+        typeof c.plural !== "string"
       ) {
         return errorResponse(502, "malformed_response");
       }
@@ -186,18 +183,12 @@ export async function POST(request: Request) {
     return Response.json({
       candidates: parsed.candidates
         .slice(0, cap)
-        .map(
-          (c: { word: string; translation: string; note: string; plural: string; pluralTranslation: string }) => ({
-            text: c.word,
-            translation: c.translation,
-            partOfSpeech: c.note,
-            plural: language === "ar" && c.plural.trim() ? c.plural.trim() : undefined,
-            pluralTranslation:
-              language === "ar" && c.plural.trim() && c.pluralTranslation.trim()
-                ? c.pluralTranslation.trim()
-                : undefined,
-          })
-        ),
+        .map((c: { word: string; translation: string; note: string; plural: string }) => ({
+          text: c.word,
+          translation: c.translation,
+          partOfSpeech: c.note,
+          plural: language === "ar" && c.plural.trim() ? c.plural.trim() : undefined,
+        })),
     });
   } catch {
     return errorResponse(502, "malformed_response");

@@ -13,12 +13,14 @@ type SortOrder = "date" | "alpha";
 export function WordList({
   words,
   language,
+  onAdd,
   onAddMany,
   onToggleLearned,
   onDelete,
 }: {
   words: Word[];
   language: Language;
+  onAdd: (word: NewWordData) => void;
   onAddMany: (items: NewWordData[]) => number;
   onToggleLearned: (id: string) => void;
   onDelete: (id: string) => void;
@@ -51,7 +53,7 @@ export function WordList({
       </div>
 
       {mode === "single" ? (
-        <AddWordForm key={language} onAddMany={onAddMany} language={language} />
+        <AddWordForm key={language} onAdd={onAdd} language={language} />
       ) : (
         <BulkAddWords key={language} onAddMany={onAddMany} language={language} />
       )}

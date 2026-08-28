@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { disambiguateWord, GenerationError } from "@/lib/anthropicClient";
-import type { NewWordData } from "@/lib/types";
+import type { DisambiguationCandidate, NewWordData } from "@/lib/types";
 import { languageConfig, type Language } from "@/lib/languages";
 
 type Status = "idle" | "processing" | "reviewing" | "error" | "done";
@@ -13,7 +13,7 @@ interface QueueItem {
 }
 
 interface ReviewRow {
-  word: NewWordData;
+  candidate: DisambiguationCandidate;
   checked: boolean;
 }
 
@@ -76,26 +76,7 @@ export function BulkAddWords({
       try {
         const candidates = await disambiguateWord(language, items[i].text, items[i].hint);
         if (cancelledRef.current) return;
-        const primary = candidates[0];
-        collected.push({
-          word: {
-            text: primary.text,
-            translation: primary.translation,
-            plural: primary.plural,
-            partOfSpeech: primary.partOfSpeech,
-          },
-          checked: true,
-        });
-        if (primary.plural && primary.plural.trim() && primary.plural.trim() !== primary.text.trim()) {
-          collected.push({
-            word: {
-              text: primary.plural,
-              translation: primary.pluralTranslation?.trim() || primary.translation,
-              partOfSpeech: "множественное число",
-            },
-            checked: true,
-          });
-        }
+        collected.push({ candidate: candidates[0], checked: true });
       } catch (err) {
         if (cancelledRef.current) return;
         setProcessedIndex(i);
@@ -139,7 +120,14 @@ export function BulkAddWords({
   }
 
   function addSelected() {
-    const items = rows.filter((r) => r.checked).map((r) => r.word);
+    const items = rows
+      .filter((r) => r.checked)
+      .map((r) => ({
+        text: r.candidate.text,
+        translation: r.candidate.translation,
+        plural: r.candidate.plural,
+        partOfSpeech: r.candidate.partOfSpeech,
+      }));
     setAddedCount(onAddMany(items));
     setStatus("done");
   }
@@ -204,11 +192,11 @@ export function BulkAddWords({
                   <input type="checkbox" checked={row.checked} onChange={() => toggleRow(i)} />
                   <span className="word-row-text">
                     <span dir={config.dir} className="word-arabic">
-                      {row.word.text}
+                      {row.candidate.text}{row.candidate.plural ? ` / ${row.candidate.plural}` : ""}
                     </span>
                     <span className="word-translation">
-                      {row.word.translation}
-                      {row.word.partOfSpeech ? ` (${row.word.partOfSpeech})` : ""}
+                      {row.candidate.translation}
+                      {row.candidate.partOfSpeech ? ` (${row.candidate.partOfSpeech})` : ""}
                     </span>
                   </span>
                 </label>
