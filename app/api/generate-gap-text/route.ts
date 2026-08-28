@@ -67,8 +67,6 @@ export async function POST(request: Request) {
           properties: {
             blanks: {
               type: "array",
-              minItems: 3,
-              maxItems: 3,
               items: {
                 type: "object",
                 properties: {
