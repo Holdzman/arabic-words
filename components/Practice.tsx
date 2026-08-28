@@ -9,12 +9,14 @@ import { TranslationQuizPractice } from "./TranslationQuizPractice";
 import { MultipleChoicePractice } from "./MultipleChoicePractice";
 import { ListeningPractice } from "./ListeningPractice";
 import { WritingPractice } from "./WritingPractice";
+import { GapTextPractice } from "./GapTextPractice";
 
-type Mode = "word" | "translate" | "listen" | "quiz" | "write";
+type Mode = "word" | "translate" | "gaps" | "listen" | "quiz" | "write";
 
 const MODES: { id: Mode; label: string; description: string }[] = [
   { id: "word", label: "Пример", description: "Посмотрите, как знакомое слово звучит в живом предложении." },
   { id: "translate", label: "Перевод", description: "Переведите целое предложение, составленное из слов вашего словаря." },
+  { id: "gaps", label: "Пропуски", description: "Впишите слова в правильной форме по смыслу связного текста." },
   { id: "listen", label: "Аудирование", description: "Прослушайте фразу, запишите её смысл и оцените свой ответ." },
   { id: "quiz", label: "Сегодня", description: "Повторите слова, которые запланированы на сегодня." },
   { id: "write", label: "Письмо", description: "Вспомните слово по переводу и напишите его без подсказок." },
@@ -80,6 +82,9 @@ export function Practice({
       )}
       {mode === "translate" && (
         <TranslationQuizPractice key={language} words={words} language={language} onOpenSettings={onOpenSettings} />
+      )}
+      {mode === "gaps" && (
+        <GapTextPractice key={language} words={words} language={language} onOpenSettings={onOpenSettings} />
       )}
       {mode === "listen" && (
         <ListeningPractice
