@@ -1,6 +1,7 @@
 "use client";
 
 import type { Word } from "@/lib/types";
+import { isWellKnown } from "@/lib/srs";
 
 function localDateKey(value: string | Date): string {
   const date = value instanceof Date ? value : new Date(value);
@@ -35,6 +36,7 @@ export function ProgressStats({ words }: { words: Word[] }) {
     .filter((item) => item.difficult > 0)
     .sort((a, b) => b.difficult - a.difficult || b.attempts - a.attempts)
     .slice(0, 5);
+  const wellKnownWords = words.filter(isWellKnown);
 
   if (words.length === 0) {
     return <p className="empty-state">Добавьте слова, чтобы здесь появился прогресс.</p>;
@@ -49,9 +51,23 @@ export function ProgressStats({ words }: { words: Word[] }) {
 
       <div className="stats-grid">
         <article className="stat-card"><strong>{words.length}</strong><span>слов в словаре</span></article>
-        <article className="stat-card"><strong>{words.filter((word) => word.isLearned).length}</strong><span>отмечено выученными</span></article>
+        <article className="stat-card"><strong>{wellKnownWords.length}</strong><span>хорошо знакомы</span></article>
         <article className="stat-card"><strong>{todayReviews.length}</strong><span>ответов сегодня</span></article>
         <article className="stat-card"><strong>{calculateStreak(words)}</strong><span>дней подряд</span></article>
+      </div>
+
+      <div className="stats-section">
+        <div className="stats-section-heading">
+          <h3>Хорошо знакомые слова</h3>
+          <span>{wellKnownWords.length}</span>
+        </div>
+        {wellKnownWords.length === 0 ? (
+          <p className="help-text">Здесь появятся слова после трёх уверенных правильных ответов подряд.</p>
+        ) : (
+          <div className="known-words-list">
+            {wellKnownWords.map((word) => <span key={word.id} dir="auto">{word.text}</span>)}
+          </div>
+        )}
       </div>
 
       <div className="stats-section">
