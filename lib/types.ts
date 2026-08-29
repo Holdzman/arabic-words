@@ -111,7 +111,6 @@ export interface GapTextResponse {
 export interface GenerateGapTextRequestBody {
   language: Language;
   words: NewWordData[];
-  targetWords?: NewWordData[];
 }
 
 // --- Accounts ---
