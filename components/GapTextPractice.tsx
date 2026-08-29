@@ -34,7 +34,7 @@ export function GapTextPractice({
     setChecked(false);
     setShowHints(false);
     try {
-      const next = await generateGapText(language, words, studyWords);
+      const next = await generateGapText(language, studyWords);
       setResult(next);
       setAnswers(next.blanks.map(() => ""));
     } catch (error) {
