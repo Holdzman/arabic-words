@@ -5,6 +5,7 @@ import { generateGapText, GenerationError } from "@/lib/anthropicClient";
 import { isAnswerCorrect } from "@/lib/textCompare";
 import { languageConfig, type Language } from "@/lib/languages";
 import type { GapTextResponse, Word } from "@/lib/types";
+import { isWellKnown } from "@/lib/srs";
 
 export function GapTextPractice({
   words,
@@ -16,6 +17,7 @@ export function GapTextPractice({
   onOpenSettings: () => void;
 }) {
   const config = languageConfig(language);
+  const studyWords = words.filter((word) => !isWellKnown(word));
   const [result, setResult] = useState<GapTextResponse | null>(null);
   const [answers, setAnswers] = useState<string[]>([]);
   const [checked, setChecked] = useState(false);
@@ -32,7 +34,7 @@ export function GapTextPractice({
     setChecked(false);
     setShowHints(false);
     try {
-      const next = await generateGapText(language, words);
+      const next = await generateGapText(language, words, studyWords);
       setResult(next);
       setAnswers(next.blanks.map(() => ""));
     } catch (error) {
@@ -56,10 +58,10 @@ export function GapTextPractice({
       <p className="help-text">
         Заполните пропуски, изменяя слова по контексту. Для арабского харакаты вводить не обязательно.
       </p>
-      <button type="button" onClick={handleGenerate} disabled={isGenerating || words.length < 3}>
+      <button type="button" onClick={handleGenerate} disabled={isGenerating || studyWords.length < 3}>
         {isGenerating ? "Создаю текст…" : result ? "Создать другой текст" : "Создать текст"}
       </button>
-      {words.length < 3 && <p className="help-text">Для этого упражнения нужно хотя бы три слова.</p>}
+      {studyWords.length < 3 && <p className="help-text">Для этого упражнения нужно хотя бы три изучаемых слова.</p>}
 
       {errorText && (
         <div className="error-box">
