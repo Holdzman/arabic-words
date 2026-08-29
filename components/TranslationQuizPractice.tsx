@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { TranslationQuizResponse, Word } from "@/lib/types";
 import { generateTranslationQuiz, GenerationError } from "@/lib/anthropicClient";
 import { languageConfig, type Language } from "@/lib/languages";
+import { isWellKnown } from "@/lib/srs";
 
 export function TranslationQuizPractice({
   words,
@@ -15,6 +16,7 @@ export function TranslationQuizPractice({
   onOpenSettings: () => void;
 }) {
   const config = languageConfig(language);
+  const studyWords = words.filter((word) => !isWellKnown(word));
   const [isGenerating, setIsGenerating] = useState(false);
   const [result, setResult] = useState<TranslationQuizResponse | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -29,7 +31,8 @@ export function TranslationQuizPractice({
     setRevealed(false);
 
     try {
-      const quiz = await generateTranslationQuiz(language, words);
+      const focusWord = studyWords[Math.floor(Math.random() * studyWords.length)];
+      const quiz = await generateTranslationQuiz(language, words, focusWord);
       setResult(quiz);
     } catch (err) {
       if (err instanceof GenerationError) {
@@ -50,9 +53,10 @@ export function TranslationQuizPractice({
         себя.
       </p>
 
-      <button onClick={handleGenerate} disabled={isGenerating}>
+      <button onClick={handleGenerate} disabled={isGenerating || studyWords.length === 0}>
         {isGenerating ? "Генерирую…" : result ? "Сгенерировать другое" : "Сгенерировать предложение"}
       </button>
+      {studyWords.length === 0 && <p className="help-text">Все слова уже хорошо знакомы. Добавьте новое слово для изучения.</p>}
 
       {errorText && (
         <div className="error-box">
