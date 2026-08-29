@@ -1,14 +1,24 @@
 # Handoff for the next coding agent
 
-Updated: 2026-08-28
+Updated: 2026-08-29
 
 ## Repository state
 
 - Repository: `Holdzman/arabic-words`
 - Continue from: `main`
-- Latest product commit at handoff creation: `4b6ee77`
+- Latest product commit at handoff creation: `2fdc161`
 - Vercel automatically deploys `main`.
 - Do not work directly on `main`: use a feature branch and a pull request.
+- Note: this file has not been kept fully in sync with every change on `main` — check recent commits/PRs for anything not mentioned below (e.g. gap-text practice, `WordSpeaker` pronunciation, bright quiz feedback landed on `main` without a corresponding section here).
+
+## Personalized word recommendations (dictionary screen)
+
+New "Рекомендуем добавить" section on the existing «Слова» screen, directly under the user's saved word list (no new tab). Not part of the original 10-item roadmap — a separate user request.
+
+- `app/api/recommend-words/route.ts` — same Anthropic integration pattern as `disambiguate-word` (auth/key resolution, same JSON-schema response shape including the Arabic plural/root/gender/feminineForm/presentTense fields). The prompt sends the learner's word list newest-first and instructs the model to weight recent words more heavily when inferring topics; falls back to generally useful common words when the dictionary is empty/small. Excluded words (already in dictionary + already shown this session) are passed in the prompt and re-filtered defensively both server- and client-side.
+- `components/WordRecommendations.tsx` — fetches a batch of 8 on mount (per language), reuses `word-row`/`word-list` markup and `WordSpeaker` for visual consistency. Accepting a recommendation calls the existing `onAddMany` (no separate add pathway), removes it from the list, and fetches one replacement to backfill its slot. "Показать ещё" fetches a fresh batch excluding everything shown so far this session.
+- Missing/invalid API key shows the same graceful `onOpenSettings` prompt pattern used elsewhere (e.g. `ListeningPractice.tsx`) instead of a broken section.
+- Wired via `WordList.tsx` (needs a new `onOpenSettings` prop, threaded from `AppShell.tsx`).
 
 ## Completed roadmap item #2
 
