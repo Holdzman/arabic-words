@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Word } from "@/lib/types";
 import { languageConfig, type Language } from "@/lib/languages";
-import { isDue, type SrsRating } from "@/lib/srs";
+import { isDue, isWellKnown, type SrsRating } from "@/lib/srs";
 import { isAnswerCorrect } from "@/lib/textCompare";
 
 interface ActiveSession {
@@ -37,6 +37,7 @@ export function WritingPractice({
   onAnswer: (id: string, rating: SrsRating) => void;
 }) {
   const config = languageConfig(language);
+  const studyWords = words.filter((word) => !isWellKnown(word));
   const [session, setSession] = useState<ActiveSession | null>(null);
   const [lastResult, setLastResult] = useState<SessionResult | null>(null);
 
@@ -87,7 +88,7 @@ export function WritingPractice({
   }
 
   if (!session) {
-    const dueWords = words.filter((w) => isDue(w));
+    const dueWords = studyWords.filter((w) => isDue(w));
     return (
       <section>
         <p className="help-text">Посмотрите перевод и напишите слово на {config.locative}.</p>
@@ -101,14 +102,16 @@ export function WritingPractice({
           </div>
         )}
 
-        {dueWords.length > 0 ? (
+        {studyWords.length === 0 ? (
+          <p className="help-text">Все слова уже хорошо знакомы. Они будут использоваться как контекст.</p>
+        ) : dueWords.length > 0 ? (
           <button type="button" onClick={() => startSession(dueWords)}>
             Начать сессию ({dueWords.length})
           </button>
-        ) : words.length > 0 ? (
+        ) : studyWords.length > 0 ? (
           <>
             <p className="help-text">На сегодня всё повторено. 🎉</p>
-            <button type="button" onClick={() => startSession(words)}>
+            <button type="button" onClick={() => startSession(studyWords)}>
               Практиковаться всё равно
             </button>
           </>
