@@ -66,12 +66,18 @@ export function TranslationQuizPractice({
       )}
 
       {result && (
-        <div className="result-card">
-          <p className="result-translation">{result.prompt}</p>
+        <div className="result-card translation-quiz-card">
+          <div className="translation-quiz-prompt">
+            <span>Переведите предложение</span>
+            <p>{result.prompt}</p>
+          </div>
           {revealed ? (
-            <p dir={config.dir} className="result-arabic">
-              {result.answer}
-            </p>
+            <div className="translation-quiz-answer">
+              <span>Ответ</span>
+              <p dir={config.dir} className="result-arabic">
+                {result.answer}
+              </p>
+            </div>
           ) : (
             <button type="button" onClick={() => setRevealed(true)}>
               Показать ответ
