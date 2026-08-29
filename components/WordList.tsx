@@ -6,6 +6,7 @@ import type { Language } from "@/lib/languages";
 import { AddWordForm } from "./AddWordForm";
 import { BulkAddWords } from "./BulkAddWords";
 import { WordRow } from "./WordRow";
+import { WordRecommendations } from "./WordRecommendations";
 
 type Mode = "single" | "bulk";
 type SortOrder = "date" | "alpha";
@@ -17,6 +18,7 @@ export function WordList({
   onAddMany,
   onToggleLearned,
   onDelete,
+  onOpenSettings,
 }: {
   words: Word[];
   language: Language;
@@ -24,6 +26,7 @@ export function WordList({
   onAddMany: (items: NewWordData[]) => number;
   onToggleLearned: (id: string) => void;
   onDelete: (id: string) => void;
+  onOpenSettings: () => void;
 }) {
   const [mode, setMode] = useState<Mode>("single");
   const [sortOrder, setSortOrder] = useState<SortOrder>("date");
@@ -86,6 +89,14 @@ export function WordList({
           </ul>
         </>
       )}
+
+      <WordRecommendations
+        key={language}
+        words={words}
+        language={language}
+        onAddMany={onAddMany}
+        onOpenSettings={onOpenSettings}
+      />
     </section>
   );
 }

@@ -7,12 +7,15 @@ import type {
   GeneratedSentence,
   GenerationErrorResponse,
   GapTextResponse,
+  RecommendWordsResponse,
   TranslationQuizResponse,
   Word,
+  WordRecommendation,
 } from "./types";
 import type { Language } from "./languages";
 
 const TRANSLATION_QUIZ_WORD_CAP = 30;
+const RECOMMEND_WORDS_CONTEXT_CAP = 60;
 
 export class GenerationError extends Error {
   constructor(public code: GenerationErrorResponse["error"]["code"], message: string) {
@@ -99,6 +102,32 @@ export async function generateTranslationQuiz(
           }
         : undefined,
     });
+  } catch (err) {
+    raiseGenerationError(err);
+  }
+}
+
+export async function recommendWords(
+  language: Language,
+  existingWords: Word[],
+  excludeWords: string[],
+  count: number
+): Promise<WordRecommendation[]> {
+  if (!hasApiKeyCached()) {
+    throw new GenerationError("missing_api_key", errorMessage("missing_api_key"));
+  }
+
+  try {
+    const res = await postJson<RecommendWordsResponse>("/api/recommend-words", {
+      language,
+      existingWords: existingWords.slice(0, RECOMMEND_WORDS_CONTEXT_CAP).map((w) => ({
+        text: w.text,
+        translation: w.translation,
+      })),
+      excludeWords,
+      count,
+    });
+    return res.recommendations;
   } catch (err) {
     raiseGenerationError(err);
   }
