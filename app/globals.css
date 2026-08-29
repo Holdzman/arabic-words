@@ -468,6 +468,29 @@ label {
   color: var(--color-danger-foreground);
 }
 
+.quiz-feedback {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-word);
+  font-weight: 700;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  animation: reveal var(--duration-base) var(--ease-out);
+}
+
+.quiz-feedback-correct {
+  background: color-mix(in oklch, var(--color-success) 16%, var(--color-surface));
+  border-color: color-mix(in oklch, var(--color-success) 48%, var(--color-border));
+  color: var(--color-success);
+}
+
+.quiz-feedback-incorrect {
+  background: var(--color-danger-subtle-bg);
+  border-color: var(--color-danger-subtle-border);
+  color: var(--color-danger);
+}
+
 .candidate-option.quiz-option-correct:disabled,
 .candidate-option.quiz-option-incorrect:disabled {
   opacity: 1;
