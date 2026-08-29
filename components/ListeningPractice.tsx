@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { TranslationQuizResponse, Word } from "@/lib/types";
 import { generateTranslationQuiz, GenerationError } from "@/lib/anthropicClient";
 import { languageConfig, type Language } from "@/lib/languages";
+import { isWellKnown } from "@/lib/srs";
 
 const SPEECH_LANGUAGE: Record<Language, string> = {
   ar: "ar-SA",
@@ -47,6 +48,7 @@ export function ListeningPractice({
   onOpenSettings: () => void;
 }) {
   const config = languageConfig(language);
+  const studyWords = words.filter((word) => !isWellKnown(word));
   const [isGenerating, setIsGenerating] = useState(false);
   const [result, setResult] = useState<TranslationQuizResponse | null>(null);
   const [userAnswer, setUserAnswer] = useState("");
@@ -139,7 +141,7 @@ export function ListeningPractice({
     setIsSpeaking(false);
 
     try {
-      const nextFocusWord = words[Math.floor(Math.random() * words.length)];
+      const nextFocusWord = studyWords[Math.floor(Math.random() * studyWords.length)];
       const quiz = await generateTranslationQuiz(language, words, nextFocusWord);
       setFocusWord(nextFocusWord);
       setResult(quiz);
@@ -217,9 +219,10 @@ export function ListeningPractice({
         вашего словаря.
       </p>
 
-      <button type="button" onClick={handleGenerate} disabled={isGenerating}>
+      <button type="button" onClick={handleGenerate} disabled={isGenerating || studyWords.length === 0}>
         {isGenerating ? "Генерирую…" : result ? "Другое предложение" : "Создать аудирование"}
       </button>
+      {studyWords.length === 0 && <p className="help-text">Все слова уже хорошо знакомы. Добавьте новое слово для изучения.</p>}
 
       {errorText && (
         <div className="error-box">
