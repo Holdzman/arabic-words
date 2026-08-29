@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Word } from "@/lib/types";
 import { languageConfig, type Language } from "@/lib/languages";
-import { isDue, type SrsRating } from "@/lib/srs";
+import { isDue, isWellKnown, type SrsRating } from "@/lib/srs";
 
 type Direction = "toTranslation" | "toWord";
 
@@ -155,6 +155,7 @@ export function MultipleChoicePractice({
   onAnswer: (id: string, rating: SrsRating) => void;
 }) {
   const config = languageConfig(language);
+  const studyWords = words.filter((word) => !isWellKnown(word));
   const [direction, setDirection] = useState<Direction>("toTranslation");
   const [session, setSession] = useState<ActiveSession | null>(null);
   const [lastResult, setLastResult] = useState<SessionResult | null>(null);
@@ -204,7 +205,7 @@ export function MultipleChoicePractice({
   }
 
   if (!session) {
-    const dueWords = words.filter((w) => isDue(w));
+    const dueWords = studyWords.filter((w) => isDue(w));
     return (
       <section>
         <div className="mode-toggle">
@@ -233,14 +234,16 @@ export function MultipleChoicePractice({
           </div>
         )}
 
-        {dueWords.length > 0 ? (
+        {studyWords.length === 0 ? (
+          <p className="help-text">Все слова уже хорошо знакомы. Они останутся контекстом для других упражнений.</p>
+        ) : dueWords.length > 0 ? (
           <button type="button" onClick={() => startSession(dueWords)}>
             Начать сессию ({dueWords.length})
           </button>
         ) : (
           <>
             <p className="help-text">На сегодня всё повторено. 🎉</p>
-            <button type="button" onClick={() => startSession(words)}>
+            <button type="button" onClick={() => startSession(studyWords)}>
               Практиковаться всё равно
             </button>
           </>
