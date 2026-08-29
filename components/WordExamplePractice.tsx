@@ -5,6 +5,7 @@ import type { GeneratedSentence, Word } from "@/lib/types";
 import { generateSentence, GenerationError } from "@/lib/anthropicClient";
 import { sampleKnownWords } from "@/lib/sampleKnownWords";
 import { languageConfig, type Language } from "@/lib/languages";
+import { isWellKnown } from "@/lib/srs";
 
 export function WordExamplePractice({
   words,
@@ -18,10 +19,10 @@ export function WordExamplePractice({
   onOpenSettings: () => void;
 }) {
   const config = languageConfig(language);
+  const studyWords = useMemo(() => words.filter((word) => !isWellKnown(word)), [words]);
   const defaultWordId = useMemo(() => {
-    const firstUnlearned = words.find((w) => !w.isLearned);
-    return (firstUnlearned ?? words[0])?.id ?? null;
-  }, [words]);
+    return studyWords[0]?.id ?? null;
+  }, [studyWords]);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -30,7 +31,7 @@ export function WordExamplePractice({
   const [showSettingsAction, setShowSettingsAction] = useState(false);
 
   const activeId = selectedId ?? defaultWordId;
-  const selectedWord = words.find((w) => w.id === activeId) ?? null;
+  const selectedWord = studyWords.find((w) => w.id === activeId) ?? null;
 
   async function handleGenerate() {
     if (!selectedWord) return;
@@ -68,12 +69,14 @@ export function WordExamplePractice({
           setErrorText(null);
         }}
       >
-        {words.map((word) => (
+        {studyWords.map((word) => (
           <option key={word.id} value={word.id}>
             {word.text} — {word.translation}
           </option>
         ))}
       </select>
+
+      {studyWords.length === 0 && <p className="help-text">Все слова уже хорошо знакомы и доступны как контекст.</p>}
 
       <button onClick={handleGenerate} disabled={isGenerating || !selectedWord}>
         {isGenerating ? "Генерирую…" : "Сгенерировать предложение"}
