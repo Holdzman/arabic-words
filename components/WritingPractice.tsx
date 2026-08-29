@@ -3,13 +3,14 @@
 import { useState } from "react";
 import type { Word } from "@/lib/types";
 import { languageConfig, type Language } from "@/lib/languages";
-import { isDue, reviewSrsState, SRS_RATING_LABELS, SRS_RATING_ORDER, type SrsRating } from "@/lib/srs";
+import { isDue, type SrsRating } from "@/lib/srs";
 import { isAnswerCorrect } from "@/lib/textCompare";
 
 interface ActiveSession {
   queue: Word[];
   total: number;
-  ratings: Record<SrsRating, number>;
+  correct: number;
+  incorrect: number;
   prompt: Word;
   input: string;
   submitted: boolean;
@@ -18,7 +19,8 @@ interface ActiveSession {
 
 interface SessionResult {
   total: number;
-  ratings: Record<SrsRating, number>;
+  correct: number;
+  incorrect: number;
 }
 
 function shuffle<T>(items: T[]): T[] {
@@ -43,7 +45,8 @@ export function WritingPractice({
     setSession({
       queue,
       total: queue.length,
-      ratings: { again: 0, hard: 0, good: 0, easy: 0 },
+      correct: 0,
+      incorrect: 0,
       prompt: queue[0],
       input: "",
       submitted: false,
@@ -55,22 +58,26 @@ export function WritingPractice({
   function submitAnswer() {
     if (!session || session.submitted || !session.input.trim()) return;
     const correct = isAnswerCorrect(session.input, session.prompt.text, language);
-    setSession({ ...session, submitted: true, isCorrect: correct });
+    onAnswer(session.prompt.id, correct ? "good" : "again");
+    setSession({
+      ...session,
+      submitted: true,
+      isCorrect: correct,
+      correct: session.correct + (correct ? 1 : 0),
+      incorrect: session.incorrect + (correct ? 0 : 1),
+    });
   }
 
-  function rateAnswer(rating: SrsRating) {
+  function nextQuestion() {
     if (!session || !session.submitted) return;
-    onAnswer(session.prompt.id, rating);
-    const ratings = { ...session.ratings, [rating]: session.ratings[rating] + 1 };
     const nextQueue = session.queue.slice(1);
     if (nextQueue.length === 0) {
-      setLastResult({ total: session.total, ratings });
+      setLastResult({ total: session.total, correct: session.correct, incorrect: session.incorrect });
       setSession(null);
       return;
     }
     setSession({
       ...session,
-      ratings,
       queue: nextQueue,
       prompt: nextQueue[0],
       input: "",
@@ -89,8 +96,7 @@ export function WritingPractice({
           <div className="result-card">
             <p>Сессия завершена: {lastResult.total} слов.</p>
             <p className="help-text">
-              Не помню {lastResult.ratings.again} · Трудно {lastResult.ratings.hard} · Помню {lastResult.ratings.good} ·
-              Легко {lastResult.ratings.easy}
+              Верно {lastResult.correct} · Ошибок {lastResult.incorrect}
             </p>
           </div>
         )}
@@ -157,22 +163,7 @@ export function WritingPractice({
             {!isCorrect && <p className="help-text">Вы написали: {input}</p>}
           </div>
 
-          <div className="rating-grid" aria-label="Оценка ответа">
-            {SRS_RATING_ORDER.map((value) => {
-              const nextInterval = reviewSrsState(prompt, value).srsInterval;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  className={`rating-button rating-${value}`}
-                  onClick={() => rateAnswer(value)}
-                >
-                  <span>{SRS_RATING_LABELS[value]}</span>
-                  <small>{nextInterval} дн.</small>
-                </button>
-              );
-            })}
-          </div>
+          <button type="button" onClick={nextQuestion}>Дальше</button>
 
         </>
       )}
