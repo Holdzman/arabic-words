@@ -1,7 +1,6 @@
 "use client";
 
 import type { Word } from "@/lib/types";
-import { SRS_RATING_LABELS, SRS_RATING_ORDER, type SrsRating } from "@/lib/srs";
 
 function localDateKey(value: string | Date): string {
   const date = value instanceof Date ? value : new Date(value);
@@ -25,12 +24,9 @@ export function ProgressStats({ words }: { words: Word[] }) {
   const today = localDateKey(now);
   const reviews = words.flatMap((word) => word.srsHistory);
   const todayReviews = reviews.filter((review) => localDateKey(review.reviewedAt) === today);
-  const ratingCounts = SRS_RATING_ORDER.reduce<Record<SrsRating, number>>(
-    (counts, rating) => ({ ...counts, [rating]: todayReviews.filter((review) => review.rating === rating).length }),
-    { again: 0, hard: 0, good: 0, easy: 0 }
-  );
-  const confidentToday = ratingCounts.good + ratingCounts.easy;
-  const confidentPercent = todayReviews.length === 0 ? 0 : Math.round((confidentToday / todayReviews.length) * 100);
+  const correctToday = todayReviews.filter((review) => review.rating === "good" || review.rating === "easy").length;
+  const incorrectToday = todayReviews.length - correctToday;
+  const correctPercent = todayReviews.length === 0 ? 0 : Math.round((correctToday / todayReviews.length) * 100);
   const difficultWords = words
     .map((word) => {
       const difficult = word.srsHistory.filter((review) => review.rating === "again" || review.rating === "hard").length;
@@ -61,19 +57,19 @@ export function ProgressStats({ words }: { words: Word[] }) {
       <div className="stats-section">
         <div className="stats-section-heading">
           <h3>Сегодня</h3>
-          <span>{confidentPercent}% уверенных ответов</span>
+          <span>{correctPercent}% правильных ответов</span>
         </div>
         {todayReviews.length === 0 ? (
-          <p className="help-text">Сегодня ещё не было оценённых ответов.</p>
+          <p className="help-text">Сегодня ещё не было ответов.</p>
         ) : (
           <div className="rating-stats">
-            {SRS_RATING_ORDER.map((rating) => (
-              <div key={rating} className="rating-stat-row">
-                <span>{SRS_RATING_LABELS[rating]}</span>
+            {([['Верно', correctToday], ['Ошибки', incorrectToday]] as const).map(([label, count]) => (
+              <div key={label} className="rating-stat-row">
+                <span>{label}</span>
                 <div className="rating-stat-track">
-                  <span style={{ width: `${(ratingCounts[rating] / todayReviews.length) * 100}%` }} />
+                  <span style={{ width: `${(count / todayReviews.length) * 100}%` }} />
                 </div>
-                <strong>{ratingCounts[rating]}</strong>
+                <strong>{count}</strong>
               </div>
             ))}
           </div>
