@@ -72,13 +72,47 @@ function answerText(word: Word, direction: Direction): string {
   return direction === "toTranslation" ? word.translation : word.text;
 }
 
+function textShape(value: string) {
+  const normalized = normalizeForSimilarity(value);
+  const tokens = normalized ? normalized.split(" ") : [];
+  return {
+    tokenCount: tokens.length,
+    lastLetter: normalized.at(-1) ?? "",
+    lastTwoLetters: normalized.slice(-2),
+    isQuestion: /\?/.test(value),
+    isExclamation: /!/.test(value),
+    hasSlash: /\//.test(value),
+  };
+}
+
+function shapeSimilarity(left: string, right: string): number {
+  const leftShape = textShape(left);
+  const rightShape = textShape(right);
+
+  // A question, greeting, or multi-word phrase should not become an easy
+  // throwaway option for a single noun when closer alternatives exist.
+  if (leftShape.isQuestion !== rightShape.isQuestion) return -1;
+  if (leftShape.isExclamation !== rightShape.isExclamation) return -0.65;
+  if ((leftShape.tokenCount === 1) !== (rightShape.tokenCount === 1)) return -0.55;
+
+  let score = 0;
+  if (leftShape.tokenCount === rightShape.tokenCount) score += 0.3;
+  else if (Math.abs(leftShape.tokenCount - rightShape.tokenCount) === 1) score += 0.1;
+  if (leftShape.lastLetter && leftShape.lastLetter === rightShape.lastLetter) score += 0.35;
+  if (leftShape.lastTwoLetters.length === 2 && leftShape.lastTwoLetters === rightShape.lastTwoLetters) score += 0.2;
+  if (leftShape.hasSlash === rightShape.hasSlash) score += 0.15;
+  return score;
+}
+
 function distractorScore(prompt: Word, candidate: Word, direction: Direction): number {
   const primaryScore = textSimilarity(answerText(prompt, direction), answerText(candidate, direction));
-  const secondaryScore = textSimilarity(
-    answerText(prompt, direction === "toTranslation" ? "toWord" : "toTranslation"),
-    answerText(candidate, direction === "toTranslation" ? "toWord" : "toTranslation"),
-  );
-  return primaryScore * 0.8 + secondaryScore * 0.2;
+  const promptSource = answerText(prompt, direction === "toTranslation" ? "toWord" : "toTranslation");
+  const candidateSource = answerText(candidate, direction === "toTranslation" ? "toWord" : "toTranslation");
+  const secondaryScore = textSimilarity(promptSource, candidateSource);
+  const answerShapeScore = shapeSimilarity(answerText(prompt, direction), answerText(candidate, direction));
+  const sourceShapeScore = shapeSimilarity(promptSource, candidateSource);
+
+  return primaryScore * 0.45 + secondaryScore * 0.25 + answerShapeScore * 0.15 + sourceShapeScore * 0.15;
 }
 
 function buildQuestion(prompt: Word, allWords: Word[], direction: Direction): Question {
