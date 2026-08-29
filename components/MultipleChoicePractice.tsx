@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Word } from "@/lib/types";
 import { languageConfig, type Language } from "@/lib/languages";
 import { isDue, isWellKnown, type SrsRating } from "@/lib/srs";
@@ -159,6 +159,13 @@ export function MultipleChoicePractice({
   const [direction, setDirection] = useState<Direction>("toTranslation");
   const [session, setSession] = useState<ActiveSession | null>(null);
   const [lastResult, setLastResult] = useState<SessionResult | null>(null);
+  const [feedback, setFeedback] = useState<{ type: "correct" | "incorrect"; nonce: number } | null>(null);
+
+  useEffect(() => {
+    if (!feedback) return;
+    const timer = window.setTimeout(() => setFeedback(null), 1100);
+    return () => window.clearTimeout(timer);
+  }, [feedback]);
 
   function startSession(pool: Word[]) {
     const queue = shuffle(pool);
@@ -175,6 +182,10 @@ export function MultipleChoicePractice({
   function pickOption(word: Word) {
     if (!session) return;
     const isCorrect = word.id === session.question.prompt.id;
+    setFeedback((previous) => ({
+      type: isCorrect ? "correct" : "incorrect",
+      nonce: (previous?.nonce ?? 0) + 1,
+    }));
     const rating: SrsRating = isCorrect ? "good" : "again";
     onAnswer(session.question.prompt.id, rating);
     const correct = session.correct + (isCorrect ? 1 : 0);
@@ -264,6 +275,12 @@ export function MultipleChoicePractice({
       <p className="help-text">
         Слово {progress} из {total}.
       </p>
+
+      {feedback && (
+        <p className={`quiz-feedback quiz-feedback-${feedback.type}`} role="status" aria-live="polite">
+          {feedback.type === "correct" ? "Правильно!" : "Неправильно"}
+        </p>
+      )}
 
       <div className="result-card">
         <p dir={promptDir} className="result-arabic">
