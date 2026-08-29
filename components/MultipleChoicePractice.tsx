@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Word } from "@/lib/types";
 import { languageConfig, type Language } from "@/lib/languages";
-import { isDue, reviewSrsState, SRS_RATING_LABELS, SRS_RATING_ORDER, type SrsRating } from "@/lib/srs";
+import { isDue, type SrsRating } from "@/lib/srs";
 
 type Direction = "toTranslation" | "toWord";
 
@@ -15,14 +15,15 @@ interface Question {
 interface ActiveSession {
   queue: Word[];
   total: number;
-  ratings: Record<SrsRating, number>;
+  correct: number;
+  incorrect: number;
   question: Question;
-  selectedId: string | null;
 }
 
 interface SessionResult {
   total: number;
-  ratings: Record<SrsRating, number>;
+  correct: number;
+  incorrect: number;
 }
 
 function shuffle<T>(items: T[]): T[] {
@@ -129,37 +130,32 @@ export function MultipleChoicePractice({
     setSession({
       queue,
       total: queue.length,
-      ratings: { again: 0, hard: 0, good: 0, easy: 0 },
+      correct: 0,
+      incorrect: 0,
       question: buildQuestion(queue[0], words, direction),
-      selectedId: null,
     });
     setLastResult(null);
   }
 
   function pickOption(word: Word) {
-    if (!session || session.selectedId !== null) return;
-    setSession({
-      ...session,
-      selectedId: word.id,
-    });
-  }
-
-  function rateAnswer(rating: SrsRating) {
-    if (!session || session.selectedId === null) return;
+    if (!session) return;
+    const isCorrect = word.id === session.question.prompt.id;
+    const rating: SrsRating = isCorrect ? "good" : "again";
     onAnswer(session.question.prompt.id, rating);
-    const ratings = { ...session.ratings, [rating]: session.ratings[rating] + 1 };
+    const correct = session.correct + (isCorrect ? 1 : 0);
+    const incorrect = session.incorrect + (isCorrect ? 0 : 1);
     const nextQueue = session.queue.slice(1);
     if (nextQueue.length === 0) {
-      setLastResult({ total: session.total, ratings });
+      setLastResult({ total: session.total, correct, incorrect });
       setSession(null);
       return;
     }
     setSession({
       ...session,
-      ratings,
+      correct,
+      incorrect,
       queue: nextQueue,
       question: buildQuestion(nextQueue[0], words, direction),
-      selectedId: null,
     });
   }
 
@@ -198,7 +194,7 @@ export function MultipleChoicePractice({
           <div className="result-card">
             <p>Сессия завершена: {lastResult.total} слов.</p>
             <p className="help-text">
-              Не помню {lastResult.ratings.again} · Трудно {lastResult.ratings.hard} · Помню {lastResult.ratings.good} · Легко {lastResult.ratings.easy}
+              Верно {lastResult.correct} · Ошибок {lastResult.incorrect}
             </p>
           </div>
         )}
@@ -221,7 +217,7 @@ export function MultipleChoicePractice({
     );
   }
 
-  const { question, selectedId, queue, total } = session;
+  const { question, queue, total } = session;
   const promptText = direction === "toTranslation" ? question.prompt.text : question.prompt.translation;
   const promptDir = direction === "toTranslation" ? config.dir : "auto";
   const progress = total - queue.length + 1;
@@ -240,19 +236,12 @@ export function MultipleChoicePractice({
 
       <ul className="word-list">
         {question.options.map((option) => {
-          const isCorrect = option.id === question.prompt.id;
-          const isSelected = option.id === selectedId;
-          const answered = selectedId !== null;
-          let optionClass = "candidate-option";
-          if (answered && isCorrect) optionClass += " quiz-option-correct";
-          else if (answered && isSelected) optionClass += " quiz-option-incorrect";
-
           const optionText = direction === "toTranslation" ? option.translation : option.text;
           const optionDir = direction === "toTranslation" ? "auto" : config.dir;
 
           return (
             <li key={option.id} className="word-row">
-              <button type="button" className={optionClass} disabled={answered} onClick={() => pickOption(option)}>
+              <button type="button" className="candidate-option" onClick={() => pickOption(option)}>
                 <span dir={optionDir} className="word-arabic">
                   {optionText}
                 </span>
@@ -262,26 +251,6 @@ export function MultipleChoicePractice({
         })}
       </ul>
 
-      {selectedId !== null && (
-        <>
-          <div className="rating-grid" aria-label="Оценка ответа">
-            {SRS_RATING_ORDER.map((value) => {
-              const nextInterval = reviewSrsState(question.prompt, value).srsInterval;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  className={`rating-button rating-${value}`}
-                  onClick={() => rateAnswer(value)}
-                >
-                  <span>{SRS_RATING_LABELS[value]}</span>
-                  <small>{nextInterval} дн.</small>
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
     </section>
   );
 }
@@ -301,7 +270,7 @@ function ReviewHistory({ words }: { words: Word[] }) {
         {recent.map(({ word, review }) => (
           <li key={`${word.id}-${review.reviewedAt}`}>
             <span dir="auto">{word.text}</span>
-            <span>{SRS_RATING_LABELS[review.rating]} · {review.nextInterval} дн.</span>
+            <span>{review.rating === "good" || review.rating === "easy" ? "Верно" : "Ошибка"} · {review.nextInterval} дн.</span>
             <time dateTime={review.reviewedAt}>
               {new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(review.reviewedAt))}
             </time>
