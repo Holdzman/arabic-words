@@ -201,6 +201,7 @@ export function AppShell() {
             onAddMany={handleAddMany}
             onToggleLearned={handleToggleLearned}
             onDelete={handleDelete}
+            onOpenSettings={() => setActiveTab("settings")}
           />
         )}
         {activeTab === "practice" && (

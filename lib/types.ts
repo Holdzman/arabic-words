@@ -113,6 +113,28 @@ export interface GenerateGapTextRequestBody {
   words: NewWordData[];
 }
 
+export interface WordRecommendation {
+  text: string;
+  translation: string;
+  partOfSpeech?: string;
+  plural?: string;
+  root?: string;
+  gender?: "m" | "f";
+  feminineForm?: string;
+  presentTense?: string;
+}
+
+export interface RecommendWordsRequestBody {
+  language: Language;
+  existingWords: { text: string; translation: string }[];
+  excludeWords: string[];
+  count: number;
+}
+
+export interface RecommendWordsResponse {
+  recommendations: WordRecommendation[];
+}
+
 // --- Accounts ---
 
 export type AuthErrorCode =
