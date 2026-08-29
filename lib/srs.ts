@@ -27,6 +27,15 @@ export interface SrsReview {
   nextDue: string;
 }
 
+export function isWellKnown(
+  state: Pick<SrsState, "srsReps"> & { isLearned?: boolean; srsHistory?: SrsReview[] }
+): boolean {
+  if (state.isLearned) return true;
+  if (state.srsReps < 3) return false;
+  const recent = (state.srsHistory ?? []).slice(-3);
+  return recent.length === 3 && recent.every((review) => review.rating === "good" || review.rating === "easy");
+}
+
 export function initialSrsState(now: Date = new Date()): SrsState {
   return { srsInterval: 0, srsEase: 2.5, srsReps: 0, srsDue: now.toISOString() };
 }
