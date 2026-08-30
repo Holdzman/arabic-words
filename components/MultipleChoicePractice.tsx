@@ -272,15 +272,21 @@ export function MultipleChoicePractice({
 
   return (
     <section>
-      <p className="help-text">
-        Слово {progress} из {total}.
+      <p className="help-text quiz-progress-line">
+        <span>
+          Слово {progress} из {total}.
+        </span>
+        {feedback && (
+          <span
+            key={feedback.nonce}
+            className={`quiz-feedback quiz-feedback-${feedback.type}`}
+            role="status"
+            aria-live="polite"
+          >
+            {feedback.type === "correct" ? "Правильно!" : "Неправильно"}
+          </span>
+        )}
       </p>
-
-      {feedback && (
-        <p className={`quiz-feedback quiz-feedback-${feedback.type}`} role="status" aria-live="polite">
-          {feedback.type === "correct" ? "Правильно!" : "Неправильно"}
-        </p>
-      )}
 
       <div className="result-card">
         <p dir={promptDir} className="result-arabic">
