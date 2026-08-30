@@ -117,8 +117,14 @@ function distractorScore(prompt: Word, candidate: Word, direction: Direction): n
 
 function buildQuestion(prompt: Word, allWords: Word[], direction: Direction): Question {
   const promptAnswer = normalizeForSimilarity(answerText(prompt, direction));
+  const promptTranslation = normalizeForSimilarity(prompt.translation);
   const candidates = allWords
     .filter((word) => word.id !== prompt.id)
+    // Two dictionary entries can share the same meaning (e.g. "un conto" and
+    // "il conto" both translate to "счёт"). Never let one stand in as a
+    // distractor for the other — whichever direction is visible, that would
+    // make a second answer just as correct as the intended one.
+    .filter((word) => normalizeForSimilarity(word.translation) !== promptTranslation)
     .map((word) => ({ word, score: distractorScore(prompt, word, direction) + Math.random() * 0.08 }))
     .sort((left, right) => right.score - left.score);
 
