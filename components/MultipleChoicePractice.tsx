@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { Word } from "@/lib/types";
 import { languageConfig, type Language } from "@/lib/languages";
 import { isDue, isWellKnown, type SrsRating } from "@/lib/srs";
+import { stripLeadingArticle } from "@/lib/articles";
 
 type Direction = "toTranslation" | "toWord";
 
@@ -28,21 +29,6 @@ interface SessionResult {
 
 function shuffle<T>(items: T[]): T[] {
   return [...items].sort(() => Math.random() - 0.5);
-}
-
-const LEADING_ARTICLE_RE: Partial<Record<Language, RegExp>> = {
-  it: /^(l['’]\s*|gli\s+|le\s+|lo\s+|la\s+|il\s+|i\s+|un['’]\s*|una\s+|uno\s+|un\s+)/i,
-  en: /^(the\s+|an?\s+)/i,
-  ar: /^ال/,
-};
-
-// Two dictionary entries can be the same underlying word with a different
-// article ("un conto" / "il conto"), even when their translations were
-// worded differently. Comparing the word with its article stripped catches
-// this regardless of how the translation was phrased.
-function stripLeadingArticle(text: string, language: Language): string {
-  const article = LEADING_ARTICLE_RE[language];
-  return article ? text.trim().replace(article, "").trim() : text.trim();
 }
 
 function normalizeForSimilarity(value: string): string {

@@ -1,4 +1,5 @@
 import type { Language } from "./languages";
+import { stripLeadingArticle } from "./articles";
 
 // Arabic combining diacritics (harakat, tanween, shadda, sukun, quranic marks),
 // superscript alef, and tatweel. None of these are realistic to type on a
@@ -6,7 +7,10 @@ import type { Language } from "./languages";
 const ARABIC_TASHKIL_RE = /[ً-ٰٟـ]/g;
 
 export function normalizeForCompare(text: string, language: Language): string {
-  let value = text.trim().toLowerCase().replace(/\s+/g, " ");
+  // The dictionary word may carry a specific article ("il conto") while the
+  // learner types the same core word with a different one ("un conto") —
+  // that's still the right vocabulary item, so ignore the article here too.
+  let value = stripLeadingArticle(text, language).toLowerCase().replace(/\s+/g, " ").trim();
   if (language === "ar") {
     value = value.replace(ARABIC_TASHKIL_RE, "");
   }
