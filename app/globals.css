@@ -497,6 +497,12 @@ label {
   color: var(--color-danger);
 }
 
+.quiz-feedback-hidden {
+  visibility: hidden;
+  border-color: transparent;
+  animation: none;
+}
+
 .candidate-option.quiz-option-correct:disabled,
 .candidate-option.quiz-option-incorrect:disabled {
   opacity: 1;
