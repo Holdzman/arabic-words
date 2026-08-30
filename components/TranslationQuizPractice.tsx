@@ -5,6 +5,7 @@ import type { TranslationQuizResponse, Word } from "@/lib/types";
 import { generateTranslationQuiz, GenerationError } from "@/lib/anthropicClient";
 import { languageConfig, type Language } from "@/lib/languages";
 import { isWellKnown } from "@/lib/srs";
+import { WordSpeaker } from "./WordSpeaker";
 
 export function TranslationQuizPractice({
   words,
@@ -78,9 +79,12 @@ export function TranslationQuizPractice({
           {revealed ? (
             <div className="translation-quiz-answer">
               <span>Ответ</span>
-              <p dir={config.dir} className="result-arabic">
-                {result.answer}
-              </p>
+              <div className="word-pronunciation-line">
+                <p dir={config.dir} className="result-arabic">
+                  {result.answer}
+                </p>
+                <WordSpeaker text={result.answer} language={language} />
+              </div>
             </div>
           ) : (
             <button type="button" onClick={() => setRevealed(true)}>
