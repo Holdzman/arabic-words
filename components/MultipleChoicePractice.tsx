@@ -276,16 +276,14 @@ export function MultipleChoicePractice({
         <span>
           Слово {progress} из {total}.
         </span>
-        {feedback && (
-          <span
-            key={feedback.nonce}
-            className={`quiz-feedback quiz-feedback-${feedback.type}`}
-            role="status"
-            aria-live="polite"
-          >
-            {feedback.type === "correct" ? "Правильно!" : "Неправильно"}
-          </span>
-        )}
+        <span
+          key={feedback?.nonce ?? 0}
+          className={feedback ? `quiz-feedback quiz-feedback-${feedback.type}` : "quiz-feedback quiz-feedback-hidden"}
+          role="status"
+          aria-live="polite"
+        >
+          {feedback ? (feedback.type === "correct" ? "Правильно!" : "Неправильно") : " "}
+        </span>
       </p>
 
       <div className="result-card">
