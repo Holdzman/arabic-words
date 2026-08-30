@@ -30,6 +30,21 @@ function shuffle<T>(items: T[]): T[] {
   return [...items].sort(() => Math.random() - 0.5);
 }
 
+const LEADING_ARTICLE_RE: Partial<Record<Language, RegExp>> = {
+  it: /^(l['’]\s*|gli\s+|le\s+|lo\s+|la\s+|il\s+|i\s+|un['’]\s*|una\s+|uno\s+|un\s+)/i,
+  en: /^(the\s+|an?\s+)/i,
+  ar: /^ال/,
+};
+
+// Two dictionary entries can be the same underlying word with a different
+// article ("un conto" / "il conto"), even when their translations were
+// worded differently. Comparing the word with its article stripped catches
+// this regardless of how the translation was phrased.
+function stripLeadingArticle(text: string, language: Language): string {
+  const article = LEADING_ARTICLE_RE[language];
+  return article ? text.trim().replace(article, "").trim() : text.trim();
+}
+
 function normalizeForSimilarity(value: string): string {
   return value
     .normalize("NFD")
@@ -115,16 +130,20 @@ function distractorScore(prompt: Word, candidate: Word, direction: Direction): n
   return primaryScore * 0.45 + secondaryScore * 0.25 + answerShapeScore * 0.15 + sourceShapeScore * 0.15;
 }
 
-function buildQuestion(prompt: Word, allWords: Word[], direction: Direction): Question {
+function buildQuestion(prompt: Word, allWords: Word[], direction: Direction, language: Language): Question {
   const promptAnswer = normalizeForSimilarity(answerText(prompt, direction));
   const promptTranslation = normalizeForSimilarity(prompt.translation);
+  const promptCore = normalizeForSimilarity(stripLeadingArticle(prompt.text, language));
   const candidates = allWords
     .filter((word) => word.id !== prompt.id)
     // Two dictionary entries can share the same meaning (e.g. "un conto" and
-    // "il conto" both translate to "счёт"). Never let one stand in as a
-    // distractor for the other — whichever direction is visible, that would
-    // make a second answer just as correct as the intended one.
+    // "il conto" both translate to "счёт") or be the same word with a
+    // different article, even if their translations were phrased
+    // differently. Never let one stand in as a distractor for the other —
+    // whichever direction is visible, that would make a second answer just
+    // as correct as the intended one.
     .filter((word) => normalizeForSimilarity(word.translation) !== promptTranslation)
+    .filter((word) => !promptCore || normalizeForSimilarity(stripLeadingArticle(word.text, language)) !== promptCore)
     .map((word) => ({ word, score: distractorScore(prompt, word, direction) + Math.random() * 0.08 }))
     .sort((left, right) => right.score - left.score);
 
@@ -180,7 +199,7 @@ export function MultipleChoicePractice({
       total: queue.length,
       correct: 0,
       incorrect: 0,
-      question: buildQuestion(queue[0], words, direction),
+      question: buildQuestion(queue[0], words, direction, language),
     });
     setLastResult(null);
   }
@@ -207,7 +226,7 @@ export function MultipleChoicePractice({
       correct,
       incorrect,
       queue: nextQueue,
-      question: buildQuestion(nextQueue[0], words, direction),
+      question: buildQuestion(nextQueue[0], words, direction, language),
     });
   }
 
