@@ -192,7 +192,7 @@ export function AppShell() {
         </div>
       </header>
 
-      <main className="app-main">
+      <main key={activeLanguage} className="app-main">
         {activeTab === "words" && (
           <WordList
             words={languageWords}
