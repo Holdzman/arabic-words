@@ -113,6 +113,15 @@ export interface GenerateGapTextRequestBody {
   words: NewWordData[];
 }
 
+export interface ScarecrowQuestionResponse {
+  question: string;
+}
+
+export interface GenerateScarecrowQuestionRequestBody {
+  language: Language;
+  targetWord: { text: string; translation: string; partOfSpeech?: string };
+}
+
 export interface WordRecommendation {
   text: string;
   translation: string;
