@@ -70,10 +70,11 @@ export function AuthGate({
 
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#main-content">К содержимому</a>
       <header className="app-header">
         <h1>Иностранные слова</h1>
       </header>
-      <main className="app-main">
+      <main id="main-content" className="app-main">
         <section>
           <div className="mode-toggle">
             <button
@@ -97,15 +98,18 @@ export function AuthGate({
               <label htmlFor="username">Имя пользователя</label>
               <input
                 id="username"
+                name="username"
                 type="text"
                 autoComplete="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                spellCheck={false}
               />
 
               <label htmlFor="password">Пароль</label>
               <input
                 id="password"
+                name="password"
                 type="password"
                 autoComplete={mode === "login" ? "current-password" : "new-password"}
                 value={password}
@@ -117,7 +121,10 @@ export function AuthGate({
                   <label htmlFor="signup-code">Код приглашения</label>
                   <input
                     id="signup-code"
+                    name="signup-code"
                     type="text"
+                    autoComplete="off"
+                    spellCheck={false}
                     value={signupCode}
                     onChange={(e) => setSignupCode(e.target.value)}
                   />
@@ -125,7 +132,7 @@ export function AuthGate({
               )}
 
               {errorText && (
-                <div className="error-box">
+                <div className="error-box" role="alert">
                   <p>{errorText}</p>
                 </div>
               )}
@@ -145,7 +152,7 @@ export function AuthGate({
                 импортировать их в новый аккаунт?
               </p>
               {errorText && (
-                <div className="error-box">
+                <div className="error-box" role="alert">
                   <p>{errorText}</p>
                 </div>
               )}
