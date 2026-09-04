@@ -12,6 +12,12 @@ export function WordRow({
   onToggleLearned: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
+  function confirmDelete() {
+    if (window.confirm(`Удалить «${word.text}» из словаря?`)) {
+      onDelete(word.id);
+    }
+  }
+
   return (
     <li className="word-row">
       <div className="word-row-text">
@@ -26,12 +32,13 @@ export function WordRow({
       </div>
       <div className="word-row-actions">
         <button
+          type="button"
           className={word.isLearned ? "pill pill-success" : "pill"}
           onClick={() => onToggleLearned(word.id)}
         >
           {word.isLearned ? "Выучено" : "Отметить"}
         </button>
-        <button className="pill pill-danger" onClick={() => onDelete(word.id)}>
+        <button type="button" className="pill pill-danger" onClick={confirmDelete}>
           Удалить
         </button>
       </div>
