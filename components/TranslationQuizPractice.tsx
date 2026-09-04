@@ -5,7 +5,6 @@ import type { TranslationQuizResponse, Word } from "@/lib/types";
 import { generateTranslationQuiz, GenerationError } from "@/lib/anthropicClient";
 import { languageConfig, type Language } from "@/lib/languages";
 import { isWellKnown } from "@/lib/srs";
-import { WordSpeaker } from "./WordSpeaker";
 
 export function TranslationQuizPractice({
   words,
@@ -54,13 +53,13 @@ export function TranslationQuizPractice({
         себя.
       </p>
 
-      <button onClick={handleGenerate} disabled={isGenerating || studyWords.length === 0}>
+      <button type="button" onClick={handleGenerate} disabled={isGenerating || studyWords.length === 0}>
         {isGenerating ? "Генерирую…" : result ? "Сгенерировать другое" : "Сгенерировать предложение"}
       </button>
       {studyWords.length === 0 && <p className="help-text">Все слова уже хорошо знакомы. Добавьте новое слово для изучения.</p>}
 
       {errorText && (
-        <div className="error-box">
+        <div className="error-box" role="alert">
           <p>{errorText}</p>
           {showSettingsAction && (
             <button type="button" onClick={onOpenSettings}>
@@ -79,12 +78,9 @@ export function TranslationQuizPractice({
           {revealed ? (
             <div className="translation-quiz-answer">
               <span>Ответ</span>
-              <div className="word-pronunciation-line">
-                <p dir={config.dir} className="result-arabic">
-                  {result.answer}
-                </p>
-                <WordSpeaker text={result.answer} language={language} />
-              </div>
+              <p dir={config.dir} className="result-arabic">
+                {result.answer}
+              </p>
             </div>
           ) : (
             <button type="button" onClick={() => setRevealed(true)}>
