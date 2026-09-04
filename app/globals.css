@@ -1213,3 +1213,49 @@ label {
   margin: var(--space-2) 0 0;
   padding-inline-start: 1.25rem;
 }
+
+
+.scarecrow-picture {
+  width: min(100%, 280px);
+  height: 220px;
+  align-self: center;
+  color: var(--color-text);
+}
+
+.scarecrow-frame,
+.scarecrow-part {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.scarecrow-frame {
+  color: var(--color-border);
+}
+
+.scarecrow-part {
+  color: var(--color-danger);
+  animation: reveal var(--duration-base) var(--ease-out);
+}
+
+.scarecrow-status {
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-text-secondary);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+}
+
+.scarecrow-question {
+  padding: var(--space-5);
+  background: var(--color-accent-subtle);
+  border: 1px solid color-mix(in oklch, var(--color-accent) 32%, var(--color-border));
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--fs-result);
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: center;
+}
