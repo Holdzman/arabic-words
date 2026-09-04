@@ -1,10 +1,10 @@
 export type AppTab = "words" | "practice" | "stats" | "settings";
 
-const TABS: { id: AppTab; label: string }[] = [
-  { id: "words", label: "Слова" },
-  { id: "practice", label: "Практика" },
-  { id: "stats", label: "Прогресс" },
-  { id: "settings", label: "Настройки" },
+const TABS: { id: AppTab; label: string; icon: string }[] = [
+  { id: "words", label: "Слова", icon: "▤" },
+  { id: "practice", label: "Практика", icon: "▶" },
+  { id: "stats", label: "Прогресс", icon: "↗" },
+  { id: "settings", label: "Настройки", icon: "⚙" },
 ];
 
 export function TabBar({
@@ -24,7 +24,8 @@ export function TabBar({
           onClick={() => onChange(tab.id)}
           aria-current={tab.id === active ? "page" : undefined}
         >
-          {tab.label}
+          <span className="tab-icon" aria-hidden="true">{tab.icon}</span>
+          <span>{tab.label}</span>
         </button>
       ))}
     </nav>

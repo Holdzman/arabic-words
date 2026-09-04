@@ -20,14 +20,14 @@ const ScarecrowPractice = dynamic(() => import("./ScarecrowPractice").then((modu
 
 type Mode = "word" | "translate" | "gaps" | "listen" | "quiz" | "write" | "scarecrow";
 
-const MODES: { id: Mode; label: string; description: string }[] = [
-  { id: "word", label: "Пример", description: "Посмотрите, как знакомое слово звучит в живом предложении." },
-  { id: "translate", label: "Перевод", description: "Переведите целое предложение, составленное из слов вашего словаря." },
-  { id: "gaps", label: "Пропуски", description: "Впишите слова в правильной форме по смыслу связного текста." },
-  { id: "listen", label: "Аудирование", description: "Прослушайте фразу, запишите её смысл и оцените свой ответ." },
-  { id: "quiz", label: "Сегодня", description: "Повторите слова, которые запланированы на сегодня." },
-  { id: "write", label: "Письмо", description: "Вспомните слово по переводу и напишите его без подсказок." },
-  { id: "scarecrow", label: "Пугало", description: "Ответьте на вопрос на изучаемом языке, пока не собралось пугало." },
+const MODES: { id: Mode; label: string; icon: string; description: string }[] = [
+  { id: "word", label: "Пример", icon: "Aa", description: "Посмотрите, как знакомое слово звучит в живом предложении." },
+  { id: "translate", label: "Перевод", icon: "⇄", description: "Переведите целое предложение, составленное из слов вашего словаря." },
+  { id: "gaps", label: "Пропуски", icon: "•••", description: "Впишите слова в правильной форме по смыслу связного текста." },
+  { id: "listen", label: "Аудирование", icon: "◖))", description: "Прослушайте фразу, запишите её смысл и оцените свой ответ." },
+  { id: "quiz", label: "Сегодня", icon: "✓", description: "Повторите слова, которые запланированы на сегодня." },
+  { id: "write", label: "Письмо", icon: "✎", description: "Вспомните слово по переводу и напишите его без подсказок." },
+  { id: "scarecrow", label: "Пугало", icon: "✦", description: "Ответьте на вопрос на изучаемом языке, пока не собралось пугало." },
 ];
 
 export function Practice({
@@ -72,7 +72,8 @@ export function Practice({
               className={mode === item.id ? "practice-mode-button practice-mode-active" : "practice-mode-button"}
               onClick={() => setMode(item.id)}
             >
-              {item.label}
+              <span className="practice-mode-icon" aria-hidden="true">{item.icon}</span>
+              <span>{item.label}</span>
             </button>
           ))}
         </div>

@@ -37,7 +37,17 @@ export function WordList({
   }, [words, sortOrder]);
 
   return (
-    <section>
+    <section className="words-workspace">
+      <header className="words-heading">
+        <div>
+          <span className="practice-eyebrow">Моя коллекция</span>
+          <h2>Словарь</h2>
+          <p>Добавляйте слова и возвращайтесь к ним в тренировках.</p>
+        </div>
+        <span className="words-count"><strong>{words.length}</strong><small>слов</small></span>
+      </header>
+
+      <div className="words-compose-card">
       <div className="mode-toggle">
         <button
           type="button"
@@ -60,6 +70,7 @@ export function WordList({
       ) : (
         <BulkAddWords key={language} onAddMany={onAddMany} language={language} />
       )}
+      </div>
 
       {words.length === 0 ? (
         <p className="empty-state">Пока нет слов на этом языке. Добавьте первое слово, которое хотите выучить.</p>
