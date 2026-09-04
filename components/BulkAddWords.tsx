@@ -18,6 +18,18 @@ interface ReviewRow {
   checked: boolean;
 }
 
+const AUTO_RETRY_CODES = new Set([
+  "malformed_response",
+  "truncated",
+  "network_error",
+  "server_overloaded",
+  "rate_limited",
+]);
+
+function wait(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
 function parseQueue(raw: string): QueueItem[] {
   const hasExplicitSeparator = /[\n,]/.test(raw);
   const groups = raw
@@ -74,7 +86,23 @@ export function BulkAddWords({
       if (cancelledRef.current) return;
 
       try {
-        const candidates = await disambiguateWord(language, items[i].text, items[i].hint);
+        let candidates: DisambiguationCandidate[] | null = null;
+        let lastError: unknown;
+
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            candidates = await disambiguateWord(language, items[i].text, items[i].hint);
+            break;
+          } catch (err) {
+            lastError = err;
+            const canRetry = err instanceof GenerationError && AUTO_RETRY_CODES.has(err.code);
+            if (!canRetry || attempt === 2) throw err;
+            await wait(700 * (attempt + 1));
+            if (cancelledRef.current) return;
+          }
+        }
+
+        if (!candidates?.[0]) throw lastError ?? new Error("No candidates returned");
         if (cancelledRef.current) return;
         collected.push({ candidate: candidates[0], checked: true });
       } catch (err) {
@@ -108,6 +136,10 @@ export function BulkAddWords({
 
   function retryFromError() {
     void runProcessing(queue, processedIndex, rows.slice());
+  }
+
+  function skipFailedWord() {
+    void runProcessing(queue, processedIndex + 1, rows.slice());
   }
 
   function cancelProcessing() {
@@ -175,9 +207,15 @@ export function BulkAddWords({
       {status === "error" && (
         <div className="error-box">
           <p>{errorText}</p>
+          <p className="help-text">
+            Не удалось обработать: <strong dir="auto">{queue[processedIndex]?.text}</strong>
+          </p>
           <div className="candidate-actions">
             <button type="button" className="btn-secondary" onClick={retryFromError}>
               Повторить
+            </button>
+            <button type="button" className="btn-secondary" onClick={skipFailedWord}>
+              Пропустить слово
             </button>
             <button type="button" className="pill-danger" onClick={resetAll}>
               Отмена
