@@ -41,7 +41,12 @@ function buildHintOptions(target: Word, words: Word[], language: Language): Word
 
 function Scarecrow({ errors }: { errors: number }) {
   return (
-    <svg className="scarecrow-picture" viewBox="0 0 300 300" role="img" aria-label={`Пугало собрано на ${errors} из ${MAX_ERRORS}`}>
+    <svg
+      className={errors >= MAX_ERRORS ? "scarecrow-picture scarecrow-picture-complete" : "scarecrow-picture"}
+      viewBox="0 0 300 300"
+      role="img"
+      aria-label={`Пугало собрано на ${errors} из ${MAX_ERRORS}`}
+    >
       <defs>
         <linearGradient id="wood" x1="0" x2="1"><stop stopColor="#6f4226" /><stop offset="0.48" stopColor="#b7793f" /><stop offset="1" stopColor="#684027" /></linearGradient>
         <linearGradient id="burlap" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#f0cd83" /><stop offset="1" stopColor="#b97b35" /></linearGradient>
