@@ -1216,29 +1216,35 @@ label {
 
 
 .scarecrow-picture {
-  width: min(100%, 280px);
-  height: 220px;
+  position: relative;
+  width: min(100%, 220px);
+  aspect-ratio: 2 / 3;
   align-self: center;
-  color: var(--color-text);
+  overflow: hidden;
+  border-radius: calc(var(--radius-md) + 6px);
+  background: radial-gradient(circle at 50% 45%, oklch(40% 0.06 70), oklch(13% 0.015 265) 72%);
+  box-shadow: inset 0 0 0 1px oklch(100% 0 0 / 0.08), var(--shadow-md);
 }
 
-.scarecrow-frame,
-.scarecrow-part {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.scarecrow-picture img {
+  object-fit: contain;
 }
 
-.scarecrow-frame {
-  color: var(--color-border);
+.scarecrow-silhouette {
+  opacity: 0.09;
+  filter: grayscale(1) brightness(1.5);
 }
 
-.scarecrow-part {
-  color: var(--color-danger);
+.scarecrow-layer {
   animation: reveal var(--duration-base) var(--ease-out);
 }
+
+.scarecrow-layer-1 { clip-path: polygon(10% 0, 90% 0, 90% 39%, 10% 39%); }
+.scarecrow-layer-2 { clip-path: polygon(35% 34%, 65% 34%, 68% 66%, 32% 66%); }
+.scarecrow-layer-3 { clip-path: polygon(0 38%, 50% 38%, 50% 59%, 0 59%); }
+.scarecrow-layer-4 { clip-path: polygon(50% 38%, 100% 38%, 100% 59%, 50% 59%); }
+.scarecrow-layer-5 { clip-path: polygon(25% 60%, 51% 60%, 51% 100%, 12% 100%); }
+.scarecrow-layer-6 { clip-path: polygon(49% 60%, 75% 60%, 88% 100%, 49% 100%); }
 
 .scarecrow-status {
   display: flex;
