@@ -10,8 +10,9 @@ import { MultipleChoicePractice } from "./MultipleChoicePractice";
 import { ListeningPractice } from "./ListeningPractice";
 import { WritingPractice } from "./WritingPractice";
 import { GapTextPractice } from "./GapTextPractice";
+import { ScarecrowPractice } from "./ScarecrowPractice";
 
-type Mode = "word" | "translate" | "gaps" | "listen" | "quiz" | "write";
+type Mode = "word" | "translate" | "gaps" | "listen" | "quiz" | "write" | "scarecrow";
 
 const MODES: { id: Mode; label: string; description: string }[] = [
   { id: "word", label: "Пример", description: "Посмотрите, как знакомое слово звучит в живом предложении." },
@@ -20,6 +21,7 @@ const MODES: { id: Mode; label: string; description: string }[] = [
   { id: "listen", label: "Аудирование", description: "Прослушайте фразу, запишите её смысл и оцените свой ответ." },
   { id: "quiz", label: "Сегодня", description: "Повторите слова, которые запланированы на сегодня." },
   { id: "write", label: "Письмо", description: "Вспомните слово по переводу и напишите его без подсказок." },
+  { id: "scarecrow", label: "Пугало", description: "Ответьте на вопрос на изучаемом языке, пока не собралось пугало." },
 ];
 
 export function Practice({
@@ -100,6 +102,15 @@ export function Practice({
       )}
       {mode === "write" && (
         <WritingPractice key={language} words={words} language={language} onAnswer={onAnswer} />
+      )}
+      {mode === "scarecrow" && (
+        <ScarecrowPractice
+          key={language}
+          words={words}
+          language={language}
+          onAnswer={onAnswer}
+          onOpenSettings={onOpenSettings}
+        />
       )}
       </div>
     </section>

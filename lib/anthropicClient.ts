@@ -7,6 +7,7 @@ import type {
   GeneratedSentence,
   GenerationErrorResponse,
   GapTextResponse,
+  ScarecrowQuestionResponse,
   RecommendWordsResponse,
   TranslationQuizResponse,
   Word,
@@ -149,6 +150,29 @@ export async function generateGapText(language: Language, words: Word[]): Promis
         feminineForm: word.feminineForm,
         presentTense: word.presentTense,
       })),
+    });
+  } catch (err) {
+    raiseGenerationError(err);
+  }
+}
+
+
+export async function generateScarecrowQuestion(
+  language: Language,
+  targetWord: Word
+): Promise<ScarecrowQuestionResponse> {
+  if (!hasApiKeyCached()) {
+    throw new GenerationError("missing_api_key", errorMessage("missing_api_key"));
+  }
+
+  try {
+    return await postJson<ScarecrowQuestionResponse>("/api/generate-scarecrow-question", {
+      language,
+      targetWord: {
+        text: targetWord.text,
+        translation: targetWord.translation,
+        partOfSpeech: targetWord.partOfSpeech,
+      },
     });
   } catch (err) {
     raiseGenerationError(err);
