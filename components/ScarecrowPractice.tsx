@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Image from "next/image";
 import type { Word } from "@/lib/types";
 import { generateScarecrowQuestion, GenerationError } from "@/lib/anthropicClient";
 import { languageConfig, type Language } from "@/lib/languages";
@@ -42,19 +41,64 @@ function buildHintOptions(target: Word, words: Word[], language: Language): Word
 
 function Scarecrow({ errors }: { errors: number }) {
   return (
-    <div className="scarecrow-picture" role="img" aria-label={`Пугало собрано на ${errors} из ${MAX_ERRORS}`}>
-      <Image className="scarecrow-silhouette" src="/scarecrow-3d.png" alt="" fill sizes="220px" priority />
-      {Array.from({ length: errors }, (_, index) => (
-        <Image
-          key={index}
-          className={`scarecrow-layer scarecrow-layer-${index + 1}`}
-          src="/scarecrow-3d.png"
-          alt=""
-          fill
-          sizes="220px"
-        />
-      ))}
-    </div>
+    <svg className="scarecrow-picture" viewBox="0 0 300 300" role="img" aria-label={`Пугало собрано на ${errors} из ${MAX_ERRORS}`}>
+      <defs>
+        <linearGradient id="wood" x1="0" x2="1"><stop stopColor="#6f4226" /><stop offset="0.48" stopColor="#b7793f" /><stop offset="1" stopColor="#684027" /></linearGradient>
+        <linearGradient id="burlap" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#f0cd83" /><stop offset="1" stopColor="#b97b35" /></linearGradient>
+        <linearGradient id="shirt" x1="0" x2="1"><stop stopColor="#d8693b" /><stop offset="0.5" stopColor="#f29a55" /><stop offset="1" stopColor="#b84d31" /></linearGradient>
+        <linearGradient id="denim" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#477bb5" /><stop offset="1" stopColor="#244f86" /></linearGradient>
+        <filter id="soft-shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="5" stdDeviation="4" floodOpacity="0.25" /></filter>
+      </defs>
+
+      <g className="scarecrow-gallows" filter="url(#soft-shadow)">
+        <path d="M24 272H142" />
+        <path d="M61 272V30H201" />
+        <path d="M61 66L98 30" />
+        <path d="M190 30V69" className="scarecrow-rope" />
+        <path d="M48 272H74M48 30H74M178 30H203" className="scarecrow-wood-detail" />
+      </g>
+
+      {errors >= 1 && (
+        <g className="scarecrow-body-part" filter="url(#soft-shadow)">
+          <circle cx="190" cy="94" r="25" fill="url(#burlap)" />
+          <path d="M158 75Q190 61 222 75L215 66Q191 49 166 66Z" className="scarecrow-hat" />
+          <path d="M154 75Q190 84 226 75" className="scarecrow-hat-brim" />
+          <path d="M169 112L163 119M181 116L178 123M200 116L204 123M211 112L218 119" className="scarecrow-straw" />
+        </g>
+      )}
+      {errors >= 2 && (
+        <g className="scarecrow-body-part" filter="url(#soft-shadow)">
+          <path d="M169 120Q190 112 211 120L218 185Q190 199 162 185Z" fill="url(#shirt)" />
+          <path d="M171 145H209L211 187Q190 195 169 187Z" fill="url(#denim)" />
+          <path d="M176 126L179 153M204 126L201 153" className="scarecrow-overall-line" />
+          <path d="M178 164H202V181H178Z" className="scarecrow-pocket" />
+        </g>
+      )}
+      {errors >= 3 && (
+        <g className="scarecrow-body-part" filter="url(#soft-shadow)">
+          <path d="M169 127L137 145L112 169" className="scarecrow-limb scarecrow-shirt-limb" />
+          <path d="M112 169L99 177M112 169L103 185M112 169L113 186" className="scarecrow-straw" />
+        </g>
+      )}
+      {errors >= 4 && (
+        <g className="scarecrow-body-part" filter="url(#soft-shadow)">
+          <path d="M211 127L242 145L267 169" className="scarecrow-limb scarecrow-shirt-limb" />
+          <path d="M267 169L280 177M267 169L277 185M267 169L266 186" className="scarecrow-straw" />
+        </g>
+      )}
+      {errors >= 5 && (
+        <g className="scarecrow-body-part" filter="url(#soft-shadow)">
+          <path d="M180 188L174 229L156 261" className="scarecrow-limb scarecrow-denim-limb" />
+          <path d="M156 261L146 271M156 261L155 276M156 261L165 274" className="scarecrow-straw" />
+        </g>
+      )}
+      {errors >= 6 && (
+        <g className="scarecrow-body-part" filter="url(#soft-shadow)">
+          <path d="M201 188L207 229L225 261" className="scarecrow-limb scarecrow-denim-limb" />
+          <path d="M225 261L216 274M225 261L226 276M225 261L235 271" className="scarecrow-straw" />
+        </g>
+      )}
+    </svg>
   );
 }
 
