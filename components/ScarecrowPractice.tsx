@@ -197,7 +197,7 @@ export function ScarecrowPractice({
           {loading ? "Готовлю вопрос…" : "Начать игру"}
         </button>
         {errorText && (
-          <div className="error-box">
+          <div className="error-box" role="alert">
             <p>{errorText}</p>
             {showSettingsAction && <button type="button" onClick={onOpenSettings}>Открыть настройки</button>}
           </div>
@@ -221,11 +221,13 @@ export function ScarecrowPractice({
           <input
             id="scarecrow-answer"
             type="text"
+            name="answer"
             dir={config.dir}
             value={input}
             placeholder={config.placeholder}
             autoComplete="off"
             autoCapitalize="none"
+            spellCheck={false}
             onChange={(event) => setInput(event.target.value)}
           />
           <button type="submit" disabled={!input.trim()}>Ответить</button>
@@ -257,7 +259,11 @@ export function ScarecrowPractice({
         </form>
       ) : (
         <>
-          <div className={won ? "quiz-feedback quiz-feedback-correct" : "quiz-feedback quiz-feedback-incorrect"}>
+          <div
+            className={won ? "quiz-feedback quiz-feedback-correct" : "quiz-feedback quiz-feedback-incorrect"}
+            role="status"
+            aria-live="polite"
+          >
             {won ? "Верно!" : "Пугало собрано"}
           </div>
           <div className="result-card">
