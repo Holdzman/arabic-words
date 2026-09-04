@@ -176,6 +176,8 @@ export function BulkAddWords({
         <form onSubmit={handleSubmit}>
           <textarea
             className="bulk-textarea"
+            name="words"
+            autoComplete="off"
             placeholder={
               config.supportsDisambiguation
                 ? "Слова и фразы через запятую или по одной на строку:\nخبز - печь, باذنجان, طباخ"
@@ -205,7 +207,7 @@ export function BulkAddWords({
       )}
 
       {status === "error" && (
-        <div className="error-box">
+        <div className="error-box" role="alert">
           <p>{errorText}</p>
           <p className="help-text">
             Не удалось обработать: <strong dir="auto">{queue[processedIndex]?.text}</strong>
