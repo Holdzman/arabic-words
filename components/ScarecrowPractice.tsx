@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import type { Word } from "@/lib/types";
 import { generateScarecrowQuestion, GenerationError } from "@/lib/anthropicClient";
 import { languageConfig, type Language } from "@/lib/languages";
@@ -17,15 +18,19 @@ function randomWord(words: Word[], previousId?: string): Word {
 
 function Scarecrow({ errors }: { errors: number }) {
   return (
-    <svg className="scarecrow-picture" viewBox="0 0 240 220" role="img" aria-label={`Пугало собрано на ${errors} из ${MAX_ERRORS}`}>
-      <path className="scarecrow-frame" d="M28 202H212M55 202V22H151M55 48L82 22" />
-      {errors >= 1 && <><circle className="scarecrow-part" cx="151" cy="58" r="23" /><path className="scarecrow-part" d="M126 41H176M136 31H166L172 41H130Z" /></>}
-      {errors >= 2 && <path className="scarecrow-part" d="M151 81V142" />}
-      {errors >= 3 && <path className="scarecrow-part" d="M151 96L112 121" />}
-      {errors >= 4 && <path className="scarecrow-part" d="M151 96L190 121" />}
-      {errors >= 5 && <path className="scarecrow-part" d="M151 142L122 184" />}
-      {errors >= 6 && <path className="scarecrow-part" d="M151 142L180 184" />}
-    </svg>
+    <div className="scarecrow-picture" role="img" aria-label={`Пугало собрано на ${errors} из ${MAX_ERRORS}`}>
+      <Image className="scarecrow-silhouette" src="/scarecrow-3d.png" alt="" fill sizes="220px" priority />
+      {Array.from({ length: errors }, (_, index) => (
+        <Image
+          key={index}
+          className={`scarecrow-layer scarecrow-layer-${index + 1}`}
+          src="/scarecrow-3d.png"
+          alt=""
+          fill
+          sizes="220px"
+        />
+      ))}
+    </div>
   );
 }
 
