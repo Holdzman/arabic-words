@@ -1,16 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import type { Word } from "@/lib/types";
 import type { Language } from "@/lib/languages";
 import type { SrsRating } from "@/lib/srs";
-import { WordExamplePractice } from "./WordExamplePractice";
-import { TranslationQuizPractice } from "./TranslationQuizPractice";
-import { MultipleChoicePractice } from "./MultipleChoicePractice";
-import { ListeningPractice } from "./ListeningPractice";
-import { WritingPractice } from "./WritingPractice";
-import { GapTextPractice } from "./GapTextPractice";
-import { ScarecrowPractice } from "./ScarecrowPractice";
+
+function PracticeLoading() {
+  return <p className="empty-state" role="status" aria-live="polite">Открываю упражнение…</p>;
+}
+
+const WordExamplePractice = dynamic(() => import("./WordExamplePractice").then((module) => module.WordExamplePractice), { loading: PracticeLoading });
+const TranslationQuizPractice = dynamic(() => import("./TranslationQuizPractice").then((module) => module.TranslationQuizPractice), { loading: PracticeLoading });
+const MultipleChoicePractice = dynamic(() => import("./MultipleChoicePractice").then((module) => module.MultipleChoicePractice), { loading: PracticeLoading });
+const ListeningPractice = dynamic(() => import("./ListeningPractice").then((module) => module.ListeningPractice), { loading: PracticeLoading });
+const WritingPractice = dynamic(() => import("./WritingPractice").then((module) => module.WritingPractice), { loading: PracticeLoading });
+const GapTextPractice = dynamic(() => import("./GapTextPractice").then((module) => module.GapTextPractice), { loading: PracticeLoading });
+const ScarecrowPractice = dynamic(() => import("./ScarecrowPractice").then((module) => module.ScarecrowPractice), { loading: PracticeLoading });
 
 type Mode = "word" | "translate" | "gaps" | "listen" | "quiz" | "write" | "scarecrow";
 
