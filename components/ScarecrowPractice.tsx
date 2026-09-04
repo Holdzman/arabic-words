@@ -6,7 +6,7 @@ import type { Word } from "@/lib/types";
 import { generateScarecrowQuestion, GenerationError } from "@/lib/anthropicClient";
 import { languageConfig, type Language } from "@/lib/languages";
 import { isWellKnown, type SrsRating } from "@/lib/srs";
-import { isAnswerCorrect } from "@/lib/textCompare";
+import { isAnswerCorrect, normalizeForCompare } from "@/lib/textCompare";
 
 const MAX_ERRORS = 6;
 
@@ -14,6 +14,30 @@ function randomWord(words: Word[], previousId?: string): Word {
   const candidates = words.filter((word) => word.id !== previousId);
   const pool = candidates.length > 0 ? candidates : words;
   return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function shuffle<T>(items: T[]): T[] {
+  return [...items].sort(() => Math.random() - 0.5);
+}
+
+function buildHintOptions(target: Word, words: Word[], language: Language): Word[] {
+  const targetText = normalizeForCompare(target.text, language);
+  const candidates = words
+    .filter((candidate) => candidate.id !== target.id)
+    .filter((candidate) => normalizeForCompare(candidate.text, language) !== targetText)
+    .map((candidate) => {
+      const samePartOfSpeech = Boolean(target.partOfSpeech && candidate.partOfSpeech === target.partOfSpeech);
+      const targetWords = target.text.trim().split(/\s+/).length;
+      const candidateWords = candidate.text.trim().split(/\s+/).length;
+      const similarShape = targetWords === candidateWords;
+      const lengthDistance = Math.abs(candidate.text.length - target.text.length);
+      return { candidate, score: (samePartOfSpeech ? 4 : 0) + (similarShape ? 2 : 0) - lengthDistance * 0.05 + Math.random() };
+    })
+    .sort((left, right) => right.score - left.score)
+    .slice(0, 3)
+    .map(({ candidate }) => candidate);
+
+  return shuffle([target, ...candidates]);
 }
 
 function Scarecrow({ errors }: { errors: number }) {
@@ -56,6 +80,11 @@ export function ScarecrowPractice({
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [showSettingsAction, setShowSettingsAction] = useState(false);
+  const [showHint, setShowHint] = useState(false);
+  const hintOptions = useMemo(
+    () => (word ? buildHintOptions(word, words, language) : []),
+    [word, words, language]
+  );
 
   async function startRound(previousId?: string) {
     if (studyWords.length === 0) return;
@@ -69,6 +98,7 @@ export function ScarecrowPractice({
     setLoading(true);
     setErrorText(null);
     setShowSettingsAction(false);
+    setShowHint(false);
 
     try {
       const result = await generateScarecrowQuestion(language, nextWord);
@@ -86,9 +116,9 @@ export function ScarecrowPractice({
     }
   }
 
-  function submitAnswer() {
-    if (!word || finished || !input.trim()) return;
-    if (isAnswerCorrect(input, word.text, language)) {
+  function submitAnswer(answer = input) {
+    if (!word || finished || !answer.trim()) return;
+    if (isAnswerCorrect(answer, word.text, language)) {
       setWon(true);
       setFinished(true);
       onAnswer(word.id, errors === 0 ? "good" : "hard");
@@ -150,6 +180,31 @@ export function ScarecrowPractice({
             onChange={(event) => setInput(event.target.value)}
           />
           <button type="submit" disabled={!input.trim()}>Ответить</button>
+          {!showHint && (
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={hintOptions.length < 4}
+              onClick={() => setShowHint(true)}
+            >
+              Подсказка: 4 варианта
+            </button>
+          )}
+          {showHint && (
+            <div className="scarecrow-hint-grid" aria-label="Варианты ответа">
+              {hintOptions.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className="btn-secondary"
+                  dir={config.dir}
+                  onClick={() => submitAnswer(option.text)}
+                >
+                  {option.text}
+                </button>
+              ))}
+            </div>
+          )}
         </form>
       ) : (
         <>
