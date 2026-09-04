@@ -64,9 +64,9 @@ export function GapTextPractice({
       {studyWords.length < 3 && <p className="help-text">Для этого упражнения нужно хотя бы три изучаемых слова.</p>}
 
       {errorText && (
-        <div className="error-box">
+        <div className="error-box" role="alert">
           <p>{errorText}</p>
-          {showSettingsAction && <button onClick={onOpenSettings}>Открыть настройки</button>}
+          {showSettingsAction && <button type="button" onClick={onOpenSettings}>Открыть настройки</button>}
         </div>
       )}
 
@@ -81,6 +81,7 @@ export function GapTextPractice({
                   {blank.before}
                   <span className="gap-field">
                     <input
+                      name={`gap-${index + 1}`}
                       dir={config.dir}
                       className={inputClass}
                       value={answers[index] ?? ""}
