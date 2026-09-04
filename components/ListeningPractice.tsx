@@ -57,7 +57,7 @@ export function ListeningPractice({
   const [rated, setRated] = useState<"correct" | "incorrect" | null>(null);
   const [rate, setRate] = useState(1);
   const [hasPlayed, setHasPlayed] = useState(false);
-  const [playbackState, setPlaybackState] = useState<"idle" | "playing" | "paused">("idle");
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoiceId, setSelectedVoiceId] = useState(defaultCloudVoice(language));
   const [cloudAudio, setCloudAudio] = useState<{ key: string; url: string } | null>(null);
@@ -138,7 +138,7 @@ export function ListeningPractice({
     setRevealed(false);
     setRated(null);
     setHasPlayed(false);
-    setPlaybackState("idle");
+    setIsSpeaking(false);
 
     try {
       const nextFocusWord = studyWords[Math.floor(Math.random() * studyWords.length)];
@@ -178,13 +178,10 @@ export function ListeningPractice({
       audio.playbackRate = rate;
       audio.onplay = () => {
         setHasPlayed(true);
-        setPlaybackState("playing");
+        setIsSpeaking(true);
       };
-      audio.onpause = () => {
-        if (!audio.ended) setPlaybackState("paused");
-      };
-      audio.onended = () => setPlaybackState("idle");
-      audio.onerror = () => setPlaybackState("idle");
+      audio.onended = () => setIsSpeaking(false);
+      audio.onerror = () => setIsSpeaking(false);
       audioRef.current = audio;
       void audio.play();
       return;
@@ -192,7 +189,7 @@ export function ListeningPractice({
     if (!speechSupported) return;
     if (replayTimerRef.current !== null) window.clearTimeout(replayTimerRef.current);
     window.speechSynthesis.cancel();
-    setPlaybackState("idle");
+    setIsSpeaking(false);
 
     // Mobile Safari can truncate a replay when cancel() and speak() run in
     // the same tick. Keeping the utterance alive and allowing the cancelled
@@ -205,44 +202,14 @@ export function ListeningPractice({
       if (matchingVoice) utterance.voice = matchingVoice;
       utterance.onstart = () => {
         setHasPlayed(true);
-        setPlaybackState("playing");
+        setIsSpeaking(true);
       };
-      utterance.onpause = () => setPlaybackState("paused");
-      utterance.onresume = () => setPlaybackState("playing");
-      utterance.onend = () => setPlaybackState("idle");
-      utterance.onerror = () => setPlaybackState("idle");
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
       utteranceRef.current = utterance;
       replayTimerRef.current = null;
       window.speechSynthesis.speak(utterance);
     }, 150);
-  }
-
-  function pausePlayback() {
-    if (selectedVoiceId.startsWith("cloud:")) {
-      audioRef.current?.pause();
-    } else if (speechSupported) {
-      window.speechSynthesis.pause();
-    }
-  }
-
-  function resumePlayback() {
-    if (selectedVoiceId.startsWith("cloud:")) {
-      void audioRef.current?.play();
-    } else if (speechSupported) {
-      window.speechSynthesis.resume();
-    }
-  }
-
-  function handleListenButtonClick() {
-    if (playbackState === "playing") {
-      pausePlayback();
-      return;
-    }
-    if (playbackState === "paused") {
-      resumePlayback();
-      return;
-    }
-    speak();
   }
 
   return (
@@ -258,7 +225,7 @@ export function ListeningPractice({
       {studyWords.length === 0 && <p className="help-text">Все слова уже хорошо знакомы. Добавьте новое слово для изучения.</p>}
 
       {errorText && (
-        <div className="error-box">
+        <div className="error-box" role="alert">
           <p>{errorText}</p>
           {showSettingsAction && (
             <button type="button" onClick={onOpenSettings}>
@@ -272,16 +239,8 @@ export function ListeningPractice({
         <div className="listening-card">
           {speechSupported || CLOUD_TTS_LANGUAGES.has(language) ? (
             <>
-              <button type="button" className="listen-button" onClick={handleListenButtonClick} disabled={isAudioLoading}>
-                {isAudioLoading
-                  ? "Готовлю голос…"
-                  : playbackState === "playing"
-                    ? "⏸ Пауза"
-                    : playbackState === "paused"
-                      ? "▶ Продолжить"
-                      : hasPlayed
-                        ? "↻ Прослушать ещё раз"
-                        : "▶ Прослушать"}
+              <button type="button" className="listen-button" onClick={speak} disabled={isAudioLoading}>
+                {isAudioLoading ? "Готовлю голос…" : isSpeaking ? "↻ Начать сначала" : hasPlayed ? "↻ Прослушать ещё раз" : "▶ Прослушать"}
               </button>
               {(voices.length > 0 || CLOUD_TTS_LANGUAGES.has(language)) && (
                 <div>
@@ -335,6 +294,9 @@ export function ListeningPractice({
           <div>
             <label htmlFor="listening-answer">Ваш перевод</label>
             <textarea
+              name="listening-answer"
+              autoComplete="off"
+              spellCheck={false}
               id="listening-answer"
               rows={3}
               value={userAnswer}

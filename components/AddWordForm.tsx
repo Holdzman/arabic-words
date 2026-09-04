@@ -67,6 +67,8 @@ export function AddWordForm({
       <form onSubmit={handleSubmit}>
         <input
           type="text"
+          name="word"
+          autoComplete="off"
           dir="auto"
           placeholder={`${config.placeholder} или по-русски`}
           value={text}

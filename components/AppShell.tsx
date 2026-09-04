@@ -1,17 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState, ViewTransition } from "react";
+import dynamic from "next/dynamic";
 import type { NewWordData, Word } from "@/lib/types";
 import { LANGUAGES, type Language } from "@/lib/languages";
 import { createSrsReview, initialSrsState, reviewSrsState, type SrsRating } from "@/lib/srs";
 import * as account from "@/lib/account";
 import * as wordsApi from "@/lib/wordsApi";
 import { TabBar, type AppTab } from "./TabBar";
-import { WordList } from "./WordList";
-import { Practice } from "./Practice";
-import { Settings } from "./Settings";
 import { AuthGate } from "./AuthGate";
-import { ProgressStats } from "./ProgressStats";
+
+function SectionLoading() {
+  return <p className="empty-state" role="status" aria-live="polite">Загрузка…</p>;
+}
+
+const WordList = dynamic(() => import("./WordList").then((module) => module.WordList), { loading: SectionLoading });
+const Practice = dynamic(() => import("./Practice").then((module) => module.Practice), { loading: SectionLoading });
+const ProgressStats = dynamic(() => import("./ProgressStats").then((module) => module.ProgressStats), { loading: SectionLoading });
+const Settings = dynamic(() => import("./Settings").then((module) => module.Settings), { loading: SectionLoading });
 
 type AuthStatus = "loading" | "anon" | "authed";
 
@@ -164,6 +170,14 @@ export function AppShell() {
     setHasApiKey(false);
   }
 
+  function changeLanguage(language: Language) {
+    startTransition(() => setActiveLanguage(language));
+  }
+
+  function changeTab(tab: AppTab) {
+    startTransition(() => setActiveTab(tab));
+  }
+
   if (authStatus === "loading") {
     return null;
   }
@@ -176,6 +190,7 @@ export function AppShell() {
 
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#main-content">К содержимому</a>
       <header className="app-header">
         <h1>Иностранные слова</h1>
         <div className="mode-toggle">
@@ -184,7 +199,8 @@ export function AppShell() {
               key={lang.id}
               type="button"
               className={lang.id === activeLanguage ? "pill pill-active" : "pill"}
-              onClick={() => setActiveLanguage(lang.id)}
+              onClick={() => changeLanguage(lang.id)}
+              aria-pressed={lang.id === activeLanguage}
             >
               {lang.label}
             </button>
@@ -192,7 +208,8 @@ export function AppShell() {
         </div>
       </header>
 
-      <main key={activeLanguage} className="app-main">
+      <ViewTransition key={`${activeLanguage}-${activeTab}`} enter="app-content-in" exit="app-content-out" default="none">
+      <main id="main-content" className="app-main">
         {activeTab === "words" && (
           <WordList
             words={languageWords}
@@ -201,7 +218,7 @@ export function AppShell() {
             onAddMany={handleAddMany}
             onToggleLearned={handleToggleLearned}
             onDelete={handleDelete}
-            onOpenSettings={() => setActiveTab("settings")}
+            onOpenSettings={() => changeTab("settings")}
           />
         )}
         {activeTab === "practice" && (
@@ -210,7 +227,7 @@ export function AppShell() {
             language={activeLanguage}
             onMarkLearned={handleToggleLearned}
             onAnswer={handleSrsAnswer}
-            onOpenSettings={() => setActiveTab("settings")}
+            onOpenSettings={() => changeTab("settings")}
           />
         )}
         {activeTab === "stats" && <ProgressStats words={languageWords} />}
@@ -224,8 +241,9 @@ export function AppShell() {
           />
         )}
       </main>
+      </ViewTransition>
 
-      <TabBar active={activeTab} onChange={setActiveTab} />
+      <TabBar active={activeTab} onChange={changeTab} />
     </div>
   );
 }

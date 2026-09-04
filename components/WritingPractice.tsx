@@ -143,6 +143,9 @@ export function WritingPractice({
         <input
           id="writing-answer"
           type="text"
+          name="answer"
+          autoComplete="off"
+          spellCheck={false}
           dir={config.dir}
           placeholder={config.placeholder}
           value={input}

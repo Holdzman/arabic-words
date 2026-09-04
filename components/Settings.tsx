@@ -38,8 +38,10 @@ export function Settings({
         <label htmlFor="api-key">Anthropic API-ключ</label>
         <input
           id="api-key"
+          name="api-key"
           type="password"
           autoComplete="off"
+          spellCheck={false}
           placeholder="sk-ant-..."
           value={input}
           onChange={(e) => setInput(e.target.value)}

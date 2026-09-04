@@ -61,6 +61,7 @@ export function WordExamplePractice({
     <section>
       <label htmlFor="word-select">Слово</label>
       <select
+        name="practice-word"
         id="word-select"
         value={activeId ?? ""}
         onChange={(e) => {
@@ -78,12 +79,12 @@ export function WordExamplePractice({
 
       {studyWords.length === 0 && <p className="help-text">Все слова уже хорошо знакомы и доступны как контекст.</p>}
 
-      <button onClick={handleGenerate} disabled={isGenerating || !selectedWord}>
+      <button type="button" onClick={handleGenerate} disabled={isGenerating || !selectedWord}>
         {isGenerating ? "Генерирую…" : "Сгенерировать предложение"}
       </button>
 
       {errorText && (
-        <div className="error-box">
+        <div className="error-box" role="alert">
           <p>{errorText}</p>
           {showSettingsAction && (
             <button type="button" onClick={onOpenSettings}>
