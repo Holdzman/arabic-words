@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Word } from "@/lib/types";
 import { languageConfig, type Language } from "@/lib/languages";
 import { isDue, isWellKnown, type SrsRating } from "@/lib/srs";
@@ -170,13 +170,22 @@ export function MultipleChoicePractice({
   const [direction, setDirection] = useState<Direction>("toTranslation");
   const [session, setSession] = useState<ActiveSession | null>(null);
   const [lastResult, setLastResult] = useState<SessionResult | null>(null);
-  const [feedback, setFeedback] = useState<{ type: "correct" | "incorrect"; nonce: number } | null>(null);
+  const [feedback, setFeedback] = useState<{
+    type: "correct" | "incorrect";
+    selectedOptionId: string;
+    nonce: number;
+  } | null>(null);
+  const advanceTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!feedback) return;
+    if (!feedback || feedback.type === "incorrect") return;
     const timer = window.setTimeout(() => setFeedback(null), 1100);
     return () => window.clearTimeout(timer);
   }, [feedback]);
+
+  useEffect(() => () => {
+    if (advanceTimerRef.current !== null) window.clearTimeout(advanceTimerRef.current);
+  }, []);
 
   function startSession(pool: Word[]) {
     const queue = shuffle(pool);
@@ -191,10 +200,11 @@ export function MultipleChoicePractice({
   }
 
   function pickOption(word: Word) {
-    if (!session) return;
+    if (!session || feedback?.type === "incorrect") return;
     const isCorrect = word.id === session.question.prompt.id;
     setFeedback((previous) => ({
       type: isCorrect ? "correct" : "incorrect",
+      selectedOptionId: word.id,
       nonce: (previous?.nonce ?? 0) + 1,
     }));
     const rating: SrsRating = isCorrect ? "good" : "again";
@@ -202,18 +212,31 @@ export function MultipleChoicePractice({
     const correct = session.correct + (isCorrect ? 1 : 0);
     const incorrect = session.incorrect + (isCorrect ? 0 : 1);
     const nextQueue = session.queue.slice(1);
-    if (nextQueue.length === 0) {
-      setLastResult({ total: session.total, correct, incorrect });
-      setSession(null);
+    const advance = () => {
+      if (nextQueue.length === 0) {
+        setLastResult({ total: session.total, correct, incorrect });
+        setSession(null);
+        return;
+      }
+      setSession({
+        ...session,
+        correct,
+        incorrect,
+        queue: nextQueue,
+        question: buildQuestion(nextQueue[0], words, direction, language),
+      });
+    };
+
+    if (isCorrect) {
+      advance();
       return;
     }
-    setSession({
-      ...session,
-      correct,
-      incorrect,
-      queue: nextQueue,
-      question: buildQuestion(nextQueue[0], words, direction, language),
-    });
+
+    advanceTimerRef.current = window.setTimeout(() => {
+      advanceTimerRef.current = null;
+      setFeedback(null);
+      advance();
+    }, 1300);
   }
 
   if (words.length < 4) {
@@ -310,7 +333,16 @@ export function MultipleChoicePractice({
 
           return (
             <li key={option.id} className="word-row">
-              <button type="button" className="candidate-option" onClick={() => pickOption(option)}>
+              <button
+                type="button"
+                className={[
+                  "candidate-option",
+                  feedback?.type === "incorrect" && option.id === question.prompt.id ? "quiz-option-correct" : "",
+                  feedback?.type === "incorrect" && option.id === feedback.selectedOptionId ? "quiz-option-incorrect" : "",
+                ].filter(Boolean).join(" ")}
+                disabled={feedback?.type === "incorrect"}
+                onClick={() => pickOption(option)}
+              >
                 <span dir={optionDir} className="word-arabic">
                   {optionText}
                 </span>
