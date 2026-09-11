@@ -1339,6 +1339,11 @@ label {
   text-align: center;
 }
 
+.gap-field .gap-russian-hint {
+  color: var(--color-accent);
+  font-weight: 650;
+}
+
 .gap-input-correct {
   border-color: var(--color-success);
   background: color-mix(in oklch, var(--color-success) 12%, transparent);

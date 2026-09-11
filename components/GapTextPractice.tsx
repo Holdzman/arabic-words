@@ -56,7 +56,8 @@ export function GapTextPractice({
   return (
     <section>
       <p className="help-text">
-        Заполните пропуски, изменяя слова по контексту. Для арабского харакаты вводить не обязательно.
+        Под каждым пропуском дано значение слова по-русски. Впишите его на изучаемом языке в правильной форме.
+        Для арабского харакаты вводить не обязательно.
       </p>
       <button type="button" onClick={handleGenerate} disabled={isGenerating || studyWords.length < 3}>
         {isGenerating ? "Создаю текст…" : result ? "Создать другой текст" : "Создать текст"}
@@ -92,9 +93,18 @@ export function GapTextPractice({
                         setChecked(false);
                       }}
                       aria-label={`Пропуск ${index + 1}`}
+                      aria-describedby={`gap-hint-${index + 1}`}
                       autoComplete="off"
                       spellCheck={false}
                     />
+                    <small
+                      id={`gap-hint-${index + 1}`}
+                      className="gap-russian-hint"
+                      dir="ltr"
+                      lang="ru"
+                    >
+                      {blank.translation}
+                    </small>
                     {checked && !correct && <small className="gap-correction">Правильно: {blank.answer}</small>}
                   </span>
                 </span>
